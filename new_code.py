@@ -37,7 +37,7 @@ RED_COLOR = (0, 0, 255)
 BLUE_COLOR = (255, 0, 0)
 GREEN_COLOR = (0, 255, 0)
 
-VECTOR_IMAGE_HEIGHT_PERCENTAGE = 0.40 # Bottom portion of image to be analyzed for vectors.
+VECTOR_IMAGE_HEIGHT_PERCENTAGE = 0.40  # Bottom portion of image to be analyzed for vectors.
 VECTOR_MAGNITUDE_MINIMUM = 2.5
 
 
@@ -154,7 +154,7 @@ class EdgeVectorsPublisher(Node):
 				rover_point = [self.image_width / 2, self.lower_image_height]
 				middle_point = (min_y_coord + max_y_coord) / 2
 				distance = np.linalg.norm(middle_point - rover_point)
-				# print(distance)
+				print("this is distance ",distance)
 				# print("this is min_y ",min_y_coord)
 				# print("this is max_y ",max_y_coord)
 				# if len(vectors) == 0:
@@ -166,8 +166,6 @@ class EdgeVectorsPublisher(Node):
 					min_y_coord[0] = np.max(min_y_coords[:, 0])
 				else:
 					max_y_coord[0] = np.max(max_y_coords[:, 0])
-				print("this is min_y_coord ",min_y_coord)
-				print("this is max_y_coord ",max_y_coord)
 
 				vectors.append([list(min_y_coord), list(max_y_coord)])
 				vectors[-1].append(distance)
@@ -220,8 +218,8 @@ class EdgeVectorsPublisher(Node):
 		for vectors_inst in [vectors_left, vectors_right]:
 			if (len(vectors_inst) > 0):
 				cv2.line(image, vectors_inst[0][0], vectors_inst[0][1], GREEN_COLOR, 2)
-				# vectors_inst[0][0][1] += self.upper_image_height
-				# vectors_inst[0][1][1] += self.upper_image_height
+				vectors_inst[0][0][1] += self.upper_image_height
+				vectors_inst[0][1][1] += self.upper_image_height
 				final_vectors.append(vectors_inst[0][:2])
 				# distance_list.append(vectors_inst[0][2])
 

@@ -24,7 +24,7 @@ import math
 from synapse_msgs.msg import EdgeVectors
 from synapse_msgs.msg import TrafficStatus
 from sensor_msgs.msg import LaserScan
-import numpy as np
+
 QOS_PROFILE_DEFAULT = 10
 
 PI = math.pi
@@ -35,7 +35,7 @@ RIGHT_TURN = -1.0
 TURN_MIN = 0.0
 TURN_MAX = 1.0
 SPEED_MIN = 0.0
-SPEED_MAX = 1.0
+SPEED_MAX = 0.7
 SPEED_25_PERCENT = SPEED_MAX / 4
 SPEED_50_PERCENT = SPEED_25_PERCENT * 2
 SPEED_75_PERCENT = SPEED_25_PERCENT * 3
@@ -44,47 +44,13 @@ THRESHOLD_OBSTACLE_VERTICAL = 1.0
 THRESHOLD_OBSTACLE_HORIZONTAL = 0.25
 single_vector = 0
 
-VECTOR_IMAGE_HEIGHT_PERCENTAGE = 0.40 
-dist = 0
-
-
-def calc_middle_x(point1, point2, distance,direction):
-    # Calculate the midpoint of the line segment
-    x1 = point1.x
-    y1 = point1.y
-    x2 = point2.x
-    y2 = point2.y
-    mx = (x1 + x2) / 2
-    my = (y1 + y2) / 2
-
-    # Calculate the slope of the original line segment
-    if x2 - x1 != 0:
-        slope = (y2 - y1) / (x2 - x1)
-        # Calculate the slope of the perpendicular bisector
-        perp_slope = -1 / slope
-    else:
-        # Special case: the original line segment is vertical, so the perpendicular bisector is horizontal
-        perp_slope = 0
-
-    # Calculate the angle of the perpendicular bisector
-    angle = math.atan(perp_slope)
-
-    # Calculate the coordinates of the new point
-    if direction == "L":
-        new_x1 = mx + distance * math.cos(angle)
-        new_y1 = my + distance * math.sin(angle)
-        return np.array([new_x1, new_y1])
-    else:
-        new_x2 = mx - distance * math.cos(angle)
-        new_y2 = my - distance * math.sin(angle)
-        return np.array([new_x2, new_y2])
-
-    
-
-
-
-
-
+def get_vector_angle_in_radians(vector):
+	if ((vector[0].x - vector[1].x) == 0):  # Right angle vector.
+		theta = PI / 2
+	else:
+		slope = (vector[1].y - vector[0].y) / (vector[0].x - vector[1].x)
+		theta = math.atan(slope)
+	return theta
 
 class LineFollower(Node):
 	""" Initializes line follower node with the required publishers and subscriptions.
@@ -160,123 +126,57 @@ class LineFollower(Node):
 			None
 	"""
 	def edge_vectors_callback(self, message):
-		global single_vector,dist
+		global single_vector
+
 		speed = SPEED_MAX
 		turn = TURN_MIN
 
 		vectors = message
-		# print(vectors.distance_list)
-		# distance = message
-		# print("this is distance ",distance)
 		half_width = vectors.image_width / 2
-		lower_image_height = int(vectors.image_height * VECTOR_IMAGE_HEIGHT_PERCENTAGE)
-		rover_point = [vectors.image_width / 2, lower_image_height]
-		# NOTE: participants may improve algorithm for line follower.
 
+		# NOTE: participants may improve algorithm for line follower.
 		if (vectors.vector_count == 0):  # none.
-			speed = SPEED_50_PERCENT
 			single_vector = 0
+			speed = SPEED_50_PERCENT
 			pass
 
 		if (vectors.vector_count == 1):  # curve.
-			speed = SPEED_50_PERCENT
 			# Calculate the magnitude of the x-component of the vector.
-			check_direction = vectors.vector_1[1].x - vectors.vector_1[0].x
-			single_vector = single_vector + 1
-			direction = ""
-			if check_direction > 0:
-				direction = "R"
-			else:
-				direction = "L"
-			# print("this is full vector ",vectors.vector_1)
-			# bottom_point = np.array([vectors.vector_1[1].x,vectors.vector_1[1].y])
-			# middle_point = np.array([(vectors.vector_1[1].x + vectors.vector_1[0].x)/2,(vectors.vector_1[1].y + vectors.vector_1[0].y)/2])
-			# print("this is with one vector ")
-			# middle_x = 
-			# distance = np.linalg.norm(bottom_point - rover_point)
-			# print("this is length ",length_1)
-			# print("this is new distance ",distance)
-			# deviation = dist - distance
-			# turn = deviation / half_width
-			middle_x  = calc_middle_x(vectors.vector_1[1],vectors.vector_1[0],half_width + 120,direction)
-			# middle_x = 160 + distance
-			# deviation = 0
-			# if single_vector > 10:
-			speed = SPEED_75_PERCENT
-			deviation = half_width - middle_x[0]
-			turn = deviation / half_width
-				# if length_1 != 0:
-				# 	turn = 100/length_1
-			# print("this is deviation from bottom point ",deviation)
-			# deviation = vectors.vector_1[1].x - vectors.vector_1[0].x
-			# print("this is vector_1 when only one vector  ",vectors.vector_1)
-			# print("this is deviation ",deviation)
-			# if abs(length_1) < 200:
+			single_vector  = single_vector + 1
+			angle = get_vector_angle_in_radians(vectors.vector_1)
+			print("this is angle ",angle)
+			# print(vectors.vector_1)
+			
+			if single_vector > 3:
 				
-				# turn = length_1 / vectors.image_width
-# 
-			# print("this is turn ",turn)
-			# 
-
-		if (vectors.vector_count == 2):  # straight.
-			# Calculate the middle point of the x-components of the vectors.
-
-			
-			length_1 = np.linalg.norm (np.array([vectors.vector_1[0].x,vectors.vector_1[0].y]) - np.array([vectors.vector_1[1].x,vectors.vector_1[1].y]))
-			length_2 = np.linalg.norm (np.array([vectors.vector_2[0].x,vectors.vector_2[0].y]) - np.array([vectors.vector_2[1].x,vectors.vector_2[1].y]))
-			bottom_point_1 = np.array([vectors.vector_1[1].x,vectors.vector_1[1].y])
-			bottom_point_2 = np.array([vectors.vector_2[1].x,vectors.vector_2[1].y])
-			middle_point_1 = np.array([(vectors.vector_1[1].x + vectors.vector_1[0].x)/2,(vectors.vector_1[1].y + vectors.vector_1[0].y)/2])
-			middle_point_2 = np.array([(vectors.vector_2[1].x + vectors.vector_2[0].x)/2,(vectors.vector_2[1].y + vectors.vector_2[0].y)/2])
-			# print("this is length ",length_1,length_2)
-			# print()
-			
-			distance_1 = np.linalg.norm(bottom_point_1 - rover_point)
-			distance_2= np.linalg.norm(bottom_point_2 - rover_point)
-			# print("This is the distance from both vectors ",distance_1, distance_2)
-			# print(distance_1,distance_2)
-			# print("this is with two vectors ")
-			single_vector = 0
-			if abs(length_1 - length_2) > 80:
-				speed = SPEED_50_PERCENT 
-				# if length_1 > length_2:
-				# 	# turn = -0.1
-				# 	turn  - 
-				# else:
-				# 	turn = 0.1
-				# if single_vector > 2:
-				print("i am in ", length_1 - length_2)
-				if length_1 > length_2:
-					check_direction = vectors.vector_1[1].x - vectors.vector_1[0].x
-					if check_direction > 0:
-						direction = "R"
-					else:
-						direction = "L"
-					middle_x  = calc_middle_x(vectors.vector_1[1],vectors.vector_1[0],half_width + 120,direction)
-					# turn = (length_2 - length_1)/(half_width*50)
-					deviation = half_width - middle_x[0]
-					turn = deviation / half_width
+				if -angle >1.0:
+					turn  = 1.0
+					speed = SPEED_25_PERCENT
+				elif -angle  < -1.0:
+					turn = -1.0
+					speed = SPEED_25_PERCENT
+					
 				else:
-					check_direction = vectors.vector_2[1].x - vectors.vector_2[0].x
-					if check_direction > 0:
-						direction = "R"
-					else:
-						direction = "L"
-					middle_x  = calc_middle_x(vectors.vector_2[1],vectors.vector_2[0],half_width + 120 ,direction)
-					# turn = (length_2 - length_1)/(half_width*50)
-					deviation = half_width - middle_x[0]
-					turn = deviation / half_width
-				# print("this is turn with diffrence > 80 ",turn)
+					speed = SPEED_50_PERCENT
+					turn = -angle
 			else:
-				speed = SPEED_MAX
-				middle_x_left = (vectors.vector_1[0].x + vectors.vector_1[1].x) / 2
-				middle_x_right = (vectors.vector_2[0].x + vectors.vector_2[1].x) / 2
-				middle_x = (middle_x_left + middle_x_right) / 2
-				deviation = half_width - middle_x
-				dist = middle_x - middle_x_right
-				turn = deviation / half_width
-				# print("this is turn without difference ",turn)
+				speed = SPEED_50_PERCENT
+
 			# print("this is turn ",turn)
+			# deviation = vectors.vector_1[1].x - vectors.vector_1[0].x
+			# if deviation != 0:
+			# 	turn = vectors.image_width *0.01/ deviation
+			# 	print(turn)
+		if (vectors.vector_count == 2):  # straight.
+			
+			speed = SPEED_MAX
+			single_vector = 0
+			# Calculate the middle point of the x-components of the vectors.
+			middle_x_left = (vectors.vector_1[0].x + vectors.vector_1[1].x) / 2
+			middle_x_right = (vectors.vector_2[0].x + vectors.vector_2[1].x) / 2
+			middle_x = (middle_x_left + middle_x_right) / 2
+			deviation = half_width - middle_x
+			turn = deviation / half_width
 
 		if (self.traffic_status.stop_sign is True):
 			speed = SPEED_MIN
@@ -284,7 +184,6 @@ class LineFollower(Node):
 
 		if self.ramp_detected is True:
 			# TODO: participants need to decide action on detection of ramp/bridge.
-			# SPEED_50_PERCENT
 			print("ramp/bridge detected")
 
 		if self.obstacle_detected is True:
