@@ -47,14 +47,14 @@ single_vector = 0
 VECTOR_IMAGE_HEIGHT_PERCENTAGE = 0.40 
 dist = 0
 speed = SPEED_MAX
-
+angle_const = 160
 def speed_change(change,speed,speed_max):
 		if change == "acc":
 			if speed + 0.001 <= speed_max:
 				speed = speed + 0.001
 		elif change == "dcc":
 			if speed - 0.02 >= speed_max:
-				speed = speed - 0.0
+				speed = speed - 0.02
 		return speed
 
 def calc_middle_x(point1, point2, distance,direction):
@@ -176,7 +176,7 @@ class LineFollower(Node):
 		global single_vector,dist,speed
 		
 		turn = TURN_MIN
-
+		# print("this is speed ",speed)
 		vectors = message
 		# print(vectors.distance_list)
 		# distance = message
@@ -211,10 +211,27 @@ class LineFollower(Node):
 			# print("this is new distance ",distance)
 			# deviation = dist - distance
 			# turn = deviation / half_width
-			middle_x  = calc_middle_x(vectors.vector_1[1],vectors.vector_1[0],half_width + 120,direction)
+			if (vectors.vector_1[1].x - vectors.vector_1[0].x) != 0:
+				slope = (vectors.vector_1[1].y - vectors.vector_1[0].y) / (vectors.vector_1[1].x - vectors.vector_1[0].x)
+			else:
+				slope  = 10000000
+			# print("this is slope ",slope)
+			# if abs(slope) <= 0.2 or abs(slope) >= 1:
+			# 	# speed  = SPEED_25_PERCENT
+			
+			# 	if slope > 0:
+			# 		turn = -0.9
+			# 	else:
+			# 		turn = +0.9
+				# print("this is slope ",slope)
+			# else:
+			# print("this is slope ",slope)
+			middle_x  = calc_middle_x(vectors.vector_1[1],vectors.vector_1[0],half_width+angle_const ,direction)
 			# middle_x = 160 + distance
 			# deviation = 0
 			# if single_vector > 10:
+			if speed > SPEED_75_PERCENT:
+				speed  = SPEED_50_PERCENT
 			speed = speed_change("acc",speed,SPEED_75_PERCENT)
 			deviation = half_width - middle_x[0]
 			turn = deviation / half_width
@@ -251,45 +268,68 @@ class LineFollower(Node):
 			# print("this is with two vectors ")
 			single_vector = 0
 			speed = speed_change("acc",speed,SPEED_MAX)
-			if abs(length_1 - length_2) > 80:
-				# speed = SPEED_50_PERCENT
-				# if length_1 > length_2:
-				# 	# turn = -0.1
-				# 	turn  - 
-				# else:
-				# 	turn = 0.1
-				# if single_vector > 2:
-				print("i am in ", length_1 - length_2)
-				if length_1 > length_2:
-					check_direction = vectors.vector_1[1].x - vectors.vector_1[0].x
-					if check_direction > 0:
-						direction = "R"
-					else:
-						direction = "L"
-					middle_x  = calc_middle_x(vectors.vector_1[1],vectors.vector_1[0],half_width + 120,direction)
-					# turn = (length_2 - length_1)/(half_width*50)
-					deviation = half_width - middle_x[0]
-					turn = deviation / half_width
+			# print("i am in ", length_1 - length_2)
+			if length_1 > length_2:
+				check_direction = vectors.vector_1[1].x - vectors.vector_1[0].x
+				if check_direction > 0:
+					direction = "R"
 				else:
-					check_direction = vectors.vector_2[1].x - vectors.vector_2[0].x
-					if check_direction > 0:
-						direction = "R"
-					else:
-						direction = "L"
-					middle_x  = calc_middle_x(vectors.vector_2[1],vectors.vector_2[0],half_width + 120 ,direction)
-					# turn = (length_2 - length_1)/(half_width*50)
-					deviation = half_width - middle_x[0]
-					turn = deviation / half_width
-				# print("this is turn with diffrence > 80 ",turn)
-			else:
-				# speed = SPEED_MAX
-				middle_x_left = (vectors.vector_1[0].x + vectors.vector_1[1].x) / 2
-				middle_x_right = (vectors.vector_2[0].x + vectors.vector_2[1].x) / 2
-				middle_x = (middle_x_left + middle_x_right) / 2
-				deviation = half_width - middle_x
-				dist = middle_x - middle_x_right
+					direction = "L"
+				middle_x  = calc_middle_x(vectors.vector_1[1],vectors.vector_1[0],half_width+angle_const,direction)
+				# turn = (length_2 - length_1)/(half_width*50)
+				deviation = half_width - middle_x[0]
 				turn = deviation / half_width
-				# print("this is turn without difference ",turn)
+			else:
+				check_direction = vectors.vector_2[1].x - vectors.vector_2[0].x
+				if check_direction > 0:
+					direction = "R"
+				else:
+					direction = "L"
+				middle_x  = calc_middle_x(vectors.vector_2[1],vectors.vector_2[0],half_width +angle_const,direction)
+				# turn = (length_2 - length_1)/(half_width*50)
+				deviation = half_width - middle_x[0]
+				turn = deviation / half_width
+				# print("this is turn with diffrence > 80 ",turn)
+			# if abs(length_1 - length_2) > 80:
+			# 	# print()
+			# 	# speed = SPEED_50_PERCENT
+			# 	# if length_1 > length_2:
+			# 	# 	# turn = -0.1
+			# 	# 	turn  - 
+			# 	# else:
+			# 	# 	turn = 0.1
+			# 	# if single_vector > 2:
+			# 	print("i am in ", length_1 - length_2)
+			# 	if length_1 > length_2:
+			# 		check_direction = vectors.vector_1[1].x - vectors.vector_1[0].x
+			# 		if check_direction > 0:
+			# 			direction = "R"
+			# 		else:
+			# 			direction = "L"
+			# 		middle_x  = calc_middle_x(vectors.vector_1[1],vectors.vector_1[0],half_width + 120,direction)
+			# 		# turn = (length_2 - length_1)/(half_width*50)
+			# 		deviation = half_width - middle_x[0]
+			# 		turn = deviation / half_width
+			# 	else:
+			# 		check_direction = vectors.vector_2[1].x - vectors.vector_2[0].x
+			# 		if check_direction > 0:
+			# 			direction = "R"
+			# 		else:
+			# 			direction = "L"
+			# 		middle_x  = calc_middle_x(vectors.vector_2[1],vectors.vector_2[0],half_width + 120 ,direction)
+			# 		# turn = (length_2 - length_1)/(half_width*50)
+			# 		deviation = half_width - middle_x[0]
+			# 		turn = deviation / half_width
+			# 	# print("this is turn with diffrence > 80 ",turn)
+			# else:
+			# 	# speed = SPEED_MAX
+			# 	middle_x_left = (vectors.vector_1[0].x + vectors.vector_1[1].x) / 2
+			# 	middle_x_right = (vectors.vector_2[0].x + vectors.vector_2[1].x) / 2
+			# 	middle_x = (middle_x_left + middle_x_right) / 2
+			# 	deviation = half_width - middle_x
+			# 	dist = middle_x - middle_x_right
+			# 	turn = deviation / half_width
+			# 	# print("this is turn without difference ",turn)
 			# print("this is turn ",turn)
 
 		if (self.traffic_status.stop_sign is True):
@@ -304,7 +344,8 @@ class LineFollower(Node):
 		if self.obstacle_detected is True:
 			# TODO: participants need to decide action on detection of obstacle.
 			print("obstacle detected")
-
+		# print("this is turn ", turn)
+		# print("this is speed ",speed)
 		self.rover_move_manual_mode(speed, turn)
 
 	""" Updates instance member with traffic status message received from /traffic_status.
@@ -342,6 +383,8 @@ class LineFollower(Node):
 		front_ranges = ranges[int(length * theta / PI): int(length * (PI - theta) / PI)]
 		side_ranges_right = ranges[0: int(length * theta / PI)]
 		side_ranges_left = ranges[int(length * (PI - theta) / PI):]
+
+		# print(front_ranges)
 
 		# process front ranges.
 		angle = theta - PI / 2

@@ -35,7 +35,7 @@ RIGHT_TURN = -1.0
 TURN_MIN = 0.0
 TURN_MAX = 1.0
 SPEED_MIN = 0.0
-SPEED_MAX = 0.5
+SPEED_MAX = 0.7
 SPEED_25_PERCENT = SPEED_MAX / 4
 SPEED_50_PERCENT = SPEED_25_PERCENT * 2
 SPEED_75_PERCENT = SPEED_25_PERCENT * 3
@@ -46,6 +46,42 @@ single_vector = 0
 
 VECTOR_IMAGE_HEIGHT_PERCENTAGE = 0.40 
 dist = 0
+
+
+def find_perpendicular_bisector_point(x1, y1, x2, y2, distance,direction):
+    # Calculate the midpoint of the line segment
+    mx = (x1 + x2) / 2
+    my = (y1 + y2) / 2
+
+    # Calculate the slope of the original line segment
+    if x2 - x1 != 0:
+        slope = (y2 - y1) / (x2 - x1)
+        # Calculate the slope of the perpendicular bisector
+        perp_slope = -1 / slope
+    else:
+        # Special case: the original line segment is vertical, so the perpendicular bisector is horizontal
+        perp_slope = 0
+
+    # Calculate the angle of the perpendicular bisector
+    angle = math.atan(perp_slope)
+
+    # Calculate the coordinates of the new point
+    if direction == "L":
+        new_x1 = mx + distance * math.cos(angle)
+        new_y1 = my + distance * math.sin(angle)
+        return (new_x1, new_y1)
+    else:
+        new_x2 = mx - distance * math.cos(angle)
+        new_y2 = my - distance * math.sin(angle)
+        return(new_x2, new_y2)
+
+    
+
+
+
+
+
+
 class LineFollower(Node):
 	""" Initializes line follower node with the required publishers and subscriptions.
 
@@ -144,22 +180,28 @@ class LineFollower(Node):
 			length_1 = vectors.vector_1[1].x - vectors.vector_1[0].x
 			single_vector = single_vector + 1
 			# print("this is full vector ",vectors.vector_1)
-			middle_point = np.array([(vectors.vector_1[1].x + vectors.vector_1[0].x)/2,(vectors.vector_1[1].y + vectors.vector_1[0].y)/2])
+			bottom_point = np.array([vectors.vector_1[1].x,vectors.vector_1[1].y])
+			# middle_point = np.array([(vectors.vector_1[1].x + vectors.vector_1[0].x)/2,(vectors.vector_1[1].y + vectors.vector_1[0].y)/2])
 			# print("this is with one vector ")
 			# middle_x = 
-			distance = np.linalg.norm(middle_point - rover_point)
+			distance = np.linalg.norm(bottom_point - rover_point)
 			# print("this is length ",length_1)
 			# print("this is new distance ",distance)
 			# deviation = dist - distance
 			# turn = deviation / half_width
-			
-			if single_vector > 10:
-				speed = SPEED_75_PERCENT
-				deviation = dist - distance
-				turn = 100/length_1
-			
-			deviation = vectors.vector_1[1].x - vectors.vector_1[0].x
-			print("this is deviation ",deviation)
+			middle_x  = half_width
+			middle_x = 160 + distance
+			# deviation = 0
+			# if single_vector > 10:
+			speed = SPEED_75_PERCENT
+			deviation = distance - middle_x
+			turn = deviation / half_width
+				# if length_1 != 0:
+				# 	turn = 100/length_1
+			print("this is deviation from bottom point ",deviation)
+			# deviation = vectors.vector_1[1].x - vectors.vector_1[0].x
+			# print("this is vector_1 when only one vector  ",vectors.vector_1)
+			# print("this is deviation ",deviation)
 			# if abs(length_1) < 200:
 				
 				# turn = length_1 / vectors.image_width
@@ -171,12 +213,16 @@ class LineFollower(Node):
 			# Calculate the middle point of the x-components of the vectors.
 			length_1 = abs(vectors.vector_1[0].x - vectors.vector_1[1].x)
 			length_2 = abs(vectors.vector_2[0].x - vectors.vector_2[1].x)
+			bottom_point_1 = np.array([vectors.vector_1[1].x,vectors.vector_1[1].y])
+			bottom_point_2 = np.array([vectors.vector_2[1].x,vectors.vector_2[1].y])
 			middle_point_1 = np.array([(vectors.vector_1[1].x + vectors.vector_1[0].x)/2,(vectors.vector_1[1].y + vectors.vector_1[0].y)/2])
 			middle_point_2 = np.array([(vectors.vector_2[1].x + vectors.vector_2[0].x)/2,(vectors.vector_2[1].y + vectors.vector_2[0].y)/2])
 			# print("this is length ",length_1,length_2)
-			distance_1 = np.linalg.norm(middle_point_1 - rover_point)
-			distance_2= np.linalg.norm(middle_point_2 - rover_point)
-			print(distance_1,distance_2)
+			# print()
+			distance_1 = np.linalg.norm(bottom_point_1 - rover_point)
+			distance_2= np.linalg.norm(bottom_point_2 - rover_point)
+			print("This is the distance from both vectors ",distance_1, distance_2)
+			# print(distance_1,distance_2)
 			# print("this is with two vectors ")
 			single_vector = 0
 			if abs(length_1 - length_2) > 80:
