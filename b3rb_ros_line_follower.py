@@ -46,7 +46,16 @@ single_vector = 0
 
 VECTOR_IMAGE_HEIGHT_PERCENTAGE = 0.40 
 dist = 0
+speed = SPEED_MAX
 
+def speed_change(change,speed,speed_max):
+		if change == "acc":
+			if speed + 0.001 <= speed_max:
+				speed = speed + 0.001
+		elif change == "dcc":
+			if speed - 0.02 >= speed_max:
+				speed = speed - 0.0
+		return speed
 
 def calc_middle_x(point1, point2, distance,direction):
     # Calculate the midpoint of the line segment
@@ -159,9 +168,13 @@ class LineFollower(Node):
 		Returns:
 			None
 	"""
+	
+			
+		
+		
 	def edge_vectors_callback(self, message):
-		global single_vector,dist
-		speed = SPEED_MAX
+		global single_vector,dist,speed
+		
 		turn = TURN_MIN
 
 		vectors = message
@@ -174,12 +187,12 @@ class LineFollower(Node):
 		# NOTE: participants may improve algorithm for line follower.
 
 		if (vectors.vector_count == 0):  # none.
-			speed = SPEED_50_PERCENT
+			speed = SPEED_25_PERCENT
 			single_vector = 0
 			pass
 
 		if (vectors.vector_count == 1):  # curve.
-			speed = SPEED_50_PERCENT
+			# speed = SPEED_50_PERCENT
 			# Calculate the magnitude of the x-component of the vector.
 			check_direction = vectors.vector_1[1].x - vectors.vector_1[0].x
 			single_vector = single_vector + 1
@@ -202,7 +215,7 @@ class LineFollower(Node):
 			# middle_x = 160 + distance
 			# deviation = 0
 			# if single_vector > 10:
-			speed = SPEED_75_PERCENT
+			speed = speed_change("acc",speed,SPEED_75_PERCENT)
 			deviation = half_width - middle_x[0]
 			turn = deviation / half_width
 				# if length_1 != 0:
@@ -237,8 +250,9 @@ class LineFollower(Node):
 			# print(distance_1,distance_2)
 			# print("this is with two vectors ")
 			single_vector = 0
+			speed = speed_change("acc",speed,SPEED_MAX)
 			if abs(length_1 - length_2) > 80:
-				speed = SPEED_50_PERCENT 
+				# speed = SPEED_50_PERCENT
 				# if length_1 > length_2:
 				# 	# turn = -0.1
 				# 	turn  - 
@@ -268,7 +282,7 @@ class LineFollower(Node):
 					turn = deviation / half_width
 				# print("this is turn with diffrence > 80 ",turn)
 			else:
-				speed = SPEED_MAX
+				# speed = SPEED_MAX
 				middle_x_left = (vectors.vector_1[0].x + vectors.vector_1[1].x) / 2
 				middle_x_right = (vectors.vector_2[0].x + vectors.vector_2[1].x) / 2
 				middle_x = (middle_x_left + middle_x_right) / 2
