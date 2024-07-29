@@ -35,7 +35,7 @@ RIGHT_TURN = -1.0
 TURN_MIN = 0.0
 TURN_MAX = 1.0
 SPEED_MIN = 0.0
-SPEED_MAX = 1.3
+SPEED_MAX = 1.2
 SPEED_25_PERCENT = SPEED_MAX / 4
 SPEED_50_PERCENT = SPEED_25_PERCENT * 2
 SPEED_75_PERCENT = SPEED_25_PERCENT * 3
@@ -50,8 +50,8 @@ speed = SPEED_MAX
 angle_const = 160
 def speed_change(change,speed,speed_max):
 		if change == "acc":
-			if speed + 0.005 <= speed_max:
-				speed = speed + 0.005
+			if speed + 0.001 <= speed_max:
+				speed = speed + 0.001
 		elif change == "dcc":
 			if speed - 0.02 >= speed_max:
 				speed = speed - 0.02
@@ -137,8 +137,6 @@ class LineFollower(Node):
 
 		self.ramp_detected = False
 
-		self.ramp_staus = "Plain"
-
 	""" Operates the rover in manual mode by publishing on /cerebri/in/joy.
 
 		Args:
@@ -187,7 +185,7 @@ class LineFollower(Node):
 		lower_image_height = int(vectors.image_height * VECTOR_IMAGE_HEIGHT_PERCENTAGE)
 		rover_point = [vectors.image_width / 2, lower_image_height]
 		# NOTE: participants may improve algorithm for line follower.
-		print(self.ramp_staus)
+
 		if (vectors.vector_count == 0):  # none.
 			speed = SPEED_25_PERCENT
 			single_vector = 0
@@ -266,8 +264,7 @@ class LineFollower(Node):
 			# print(distance_1,distance_2)
 			# print("this is with two vectors ")
 			single_vector = 0
-			# speed = speed_change("acc",speed,SPEED_MAX)
-			speed = SPEED_MAX
+			speed = speed_change("acc",speed,SPEED_MAX)
 			# print("i am in ", length_1 - length_2)
 			if length_1 > length_2:
 				check_direction = vectors.vector_1[1].x - vectors.vector_1[0].x
@@ -336,18 +333,15 @@ class LineFollower(Node):
 			speed = SPEED_MIN
 			print("stop sign detected")
 
-		if self.ramp_detected is  True:
+		if self.ramp_detected is True:
 			# TODO: participants need to decide action on detection of ramp/bridge.
-			speed = SPEED_25_PERCENT
-			# speed  = 0.3
-			turn = turn * 0.2
-			# print("ramp/bridge detected")
+			# SPEED_50_PERCENT
+			print("ramp/bridge detected")
 
 		if self.obstacle_detected is True:
 			# TODO: participants need to decide action on detection of obstacle.
 			print("obstacle detected")
 		# print("this is turn ", turn)
-		# print("this is speed ",speed)
 		# print("this is speed ",speed)
 		self.rover_move_manual_mode(speed, turn)
 
@@ -390,57 +384,15 @@ class LineFollower(Node):
 		# print(front_ranges)
 
 		# process front ranges.
-		count = 0
-		ramp_up_slope = 0
-		on_ramp = 0
-		ramp_down_slope = 0
 		angle = theta - PI / 2
 		for i in range(len(front_ranges)):
-			# print(front_ranges[i]," ",type(front_ranges[i]))
-			if front_ranges[i] != float('inf') :
-				print(front_ranges[i])
-				if self.ramp_staus == "Plain" and max(front_ranges) <=  0.9:
-					count = count + 1
-				elif self.ramp_staus == "Up":
-					count = count + 1
-				elif self.ramp_staus == "On" and max(front_ranges) >= 1.0:
-					count = count + 1
-				elif self.ramp_staus == "Down":
-					count = count + 1
-			
 			if (front_ranges[i] < THRESHOLD_OBSTACLE_VERTICAL):
 				self.obstacle_detected = True
-				# return   
+				return
 
 			angle += message.angle_increment
-		# print(count)
-		# print(self.ramp_staus)
+
 		# process side ranges.
-		if count == len(front_ranges) and self.ramp_staus == "Plain":
-			self.ramp_staus = "Up"
-			self.ramp_detected = True
-			print("this is ramp status " ,self.ramp_staus )
-
-		if count == 0 and self.ramp_staus  == "Up":
-			# on_ramp = 1
-			self.ramp_staus  = "On"
-			self.ramp_detected = True
-			print("this is ramp status " ,self.ramp_staus )
-
-		if count == len(front_ranges) and self.ramp_staus  == "On":
-			# on_ramp = 1
-			self.ramp_staus  = "Down"
-			self.ramp_detected = True
-			print("this is ramp status " ,self.ramp_staus )
-			# ramp_up_slope = 0
-
-		if count != len(front_ranges)  and self.ramp_staus  == "Down":
-			# on_ramp = 1
-			self.ramp_staus  = "Plain"
-			self.ramp_detected = False
-			print("this is ramp status " ,self.ramp_staus )
-			# ramp_up_slope = 0
-
 		side_ranges_left.reverse()
 		for side_ranges in [side_ranges_left, side_ranges_right]:
 			angle = 0.0
