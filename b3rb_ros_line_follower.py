@@ -35,7 +35,7 @@ RIGHT_TURN = -1.0
 TURN_MIN = 0.0
 TURN_MAX = 1.0
 SPEED_MIN = 0.0
-SPEED_MAX = 1.0
+SPEED_MAX = 1.2
 SPEED_25_PERCENT = SPEED_MAX / 4
 SPEED_50_PERCENT = SPEED_25_PERCENT * 2
 SPEED_75_PERCENT = SPEED_25_PERCENT * 3
@@ -227,14 +227,11 @@ class LineFollower(Node):
 			# else:
 			# print("this is slope ",slope)
 			middle_x  = calc_middle_x(vectors.vector_1[1],vectors.vector_1[0],half_width+angle_const ,direction)
-			# middle_x = 160 + distance
-			# deviation = 0
-			# if single_vector > 10:
 			if speed > SPEED_75_PERCENT:
 				speed  = SPEED_50_PERCENT
 			speed = speed_change("acc",speed,SPEED_75_PERCENT)
 			deviation = half_width - middle_x[0]
-			turn = deviation / half_width
+			turn = (deviation / half_width) * 7/2
 				# if length_1 != 0:
 				# 	turn = 100/length_1
 			# print("this is deviation from bottom point ",deviation)
