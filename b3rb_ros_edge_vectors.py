@@ -154,20 +154,11 @@ class EdgeVectorsPublisher(Node):
 				rover_point = [self.image_width / 2, self.lower_image_height]
 				middle_point = (min_y_coord + max_y_coord) / 2
 				distance = np.linalg.norm(middle_point - rover_point)
-				# print(distance)
-				# print("this is min_y ",min_y_coord)
-				# print("this is max_y ",max_y_coord)
-				# if len(vectors) == 0:
-					# print("this is min_y_coord ",min_y_coord)
-					# print("this is rover_point ",rover_point)
-					# print("this is distance already calculated ",distance)
 				angle = self.get_vector_angle_in_radians([min_y_coord, max_y_coord])
 				if angle > 0:
 					min_y_coord[0] = np.max(min_y_coords[:, 0])
 				else:
 					max_y_coord[0] = np.max(max_y_coords[:, 0])
-				print("this is min_y_coord ",min_y_coord)
-				print("this is max_y_coord ",max_y_coord)
 
 				vectors.append([list(min_y_coord), list(max_y_coord)])
 				vectors[-1].append(distance)
@@ -208,7 +199,6 @@ class EdgeVectorsPublisher(Node):
 
 		# Sort vectors based on distance from rover, as we only want vectors closest to us.
 		vectors = sorted(vectors, key=lambda x: x[2])
-		# print("this is vectors ",vectors)
 		# Split vectors based on whether they lie in the left or right half of the image.
 		half_width = self.image_width / 2
 		vectors_left = [i for i in vectors if ((i[0][0] + i[1][0]) / 2) < half_width]
@@ -246,14 +236,12 @@ class EdgeVectorsPublisher(Node):
 		image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
 
 		vectors = self.process_image_for_edge_vectors(image)
-		# vectors = temp_message[0]
-		# distance_list = temp_message[1]
+
 		vectors_message = EdgeVectors()
 		vectors_message.image_height = image.shape[0]
 		vectors_message.image_width = image.shape[1]
 		vectors_message.vector_count = 0
-		# vectors_message.distance_list = distance_list
-		# print("hello")
+
 		if (len(vectors) > 0):
 			vectors_message.vector_1[0].x = float(vectors[0][0][0])
 			vectors_message.vector_1[0].y = float(vectors[0][0][1])
