@@ -58,7 +58,7 @@ right_min = 0
 right_min_index = 0
 left_under_threshold = 0
 right_under_threshold = 0
-upper_angle = 0
+
 
 
 
@@ -201,7 +201,7 @@ class LineFollower(Node):
 		
 		
 	def edge_vectors_callback(self, message):
-		global upper_angle,single_vector,dist,speed, left_min,right_min,right_min_index,left_min_index,middle_angle,Threshold,left_under_threshold,right_under_threshold
+		global single_vector,dist,speed, left_min,right_min,right_min_index,left_min_index,middle_angle,Threshold,left_under_threshold,right_under_threshold
 		
 		turn = TURN_MIN
 		vectors = message
@@ -216,7 +216,7 @@ class LineFollower(Node):
 			pass
 
 		if (vectors.vector_count == 1):  # curve.
-			Threshold = 0.5
+			Threshold = 0.4
 			# Calculate the magnitude of the x-component of the vector.
 			check_direction = vectors.vector_1[1].x - vectors.vector_1[0].x
 			single_vector = single_vector + 1
@@ -237,7 +237,7 @@ class LineFollower(Node):
 
 		if (vectors.vector_count == 2):  # straight.
 			# Calculate the middle point of the x-components of the vectors.
-			Threshold = 1.0
+			Threshold = 0.4
 			
 			length_1 = np.linalg.norm (np.array([vectors.vector_1[0].x,vectors.vector_1[0].y]) - np.array([vectors.vector_1[1].x,vectors.vector_1[1].y]))
 			length_2 = np.linalg.norm (np.array([vectors.vector_2[0].x,vectors.vector_2[0].y]) - np.array([vectors.vector_2[1].x,vectors.vector_2[1].y]))
@@ -284,28 +284,40 @@ class LineFollower(Node):
 		if self.obstacle_detected is True:
 			# TODO: participants need to decide action on detection of obstacle.
 			
-			speed = SPEED_25_PERCENT
+			speed = 0.25
 			# print("obstcale detected ",self.obstacle_status)
 			# if abs(middle_angle -default_angle) <=2:
 			if self.obstacle_status == "Front":
-				print("status is front ")
-				
-				if  upper_angle > 0:
-					turn = -((abs(upper_angle)+20)*PI/180 ) * 7/2
-					# print("front left ", turn)
+				# print("status is front ")
+
+				if right_under_threshold < left_under_threshold:
+					print("left obstical")
+					if left_under_threshold != 0:
+						# turn  = -abs(math.atan(right_under_threshold/right_min))*1.2
+						turn = -(right_under_threshold)*PI/180 
+						print("turn inside front left ",turn )
+						# turn = -(right_under_threshold/left_under_threshold)*7/2
+					else:
+						turn = -2/3
 				else:
-					turn = ((abs(upper_angle)+20)*PI/180 ) *7/2
-					# print("front right ", turn)
+					print("Right obstical")
+					if right_under_threshold != 0:
+						# turn  = abs(math.atan(left_under_threshold/left_min))*1.2
+						turn = (left_under_threshold)*PI/180
+						# turn =  (left_under_threshold/right_under_threshold)*7/2
+					else:
+						turn = 2/3
+				print("this is turn Front ",turn)
 			else:
-				if self.obstacle_status == "Left":
-					turn = -((default_angle - middle_angle)*PI/180 )
+				if self.obstacle_status == "Right":
+					turn = abs(((default_angle - middle_angle)*PI/180 )* 0.6)
 				else:
-					turn = ((default_angle - middle_angle)*PI/180 )
-				# print("this is middle angle ",middle_angle)
-				# print("normal obstacle case",self.obstacle_status," ",middle_angle," ",turn)
-				# print("this is turn normally ",turn)
-		# turn = -0.3
-		speed = 0.0
+					turn = -abs(((default_angle - middle_angle)*PI/180 )* 0.6)
+				
+
+				print("this is turn normally ",turn , self.obstacle_status)
+		
+		
 		self.rover_move_manual_mode(speed, turn)
 
 	""" Updates instance member with traffic status message received from /traffic_status.
@@ -329,7 +341,7 @@ class LineFollower(Node):
 	"""
 	def lidar_callback(self, message):
 		# TODO: participants need to implement logic for detection of ramps and obstacles.
-		global upper_angle,left_min,right_min,right_min_index,left_min_index,middle_angle,Threshold,left_under_threshold,right_under_threshold
+		global left_min,right_min,right_min_index,left_min_index,middle_angle,Threshold,left_under_threshold,right_under_threshold
 		shield_vertical = 4
 		shield_horizontal = 1
 		theta = math.atan(shield_vertical / shield_horizontal)
@@ -414,56 +426,17 @@ class LineFollower(Node):
 		# list_180 = 
 		list_180 = [index for index, value in enumerate(ranges[40:-40]) if value < Threshold]
 		# for i in ranges[5:-5]:
-		# print(list_180)
+		# print(ranges[40:-40])
+		# print(self.obstacle_status)
 		left_end = default_angle
 		right_end = default_angle
-		inf_count_left = 0
-		inf_count_right = 0
-		objects = {}
-		inf_counter = 0
-		temp_object = []
-		view_list = ranges[40:-40]
-		for i in range(len(view_list)):
-			if view_list[i] > Threshold*3:
-				inf_counter += 1
-				temp_object.append(i)
-			else:
-				if inf_counter != 0:
-					inf_counter = 0
-					objects[len(list(objects.keys()))] = temp_object
-					temp_object = []
-		objects[len(list(objects.keys()))] = temp_object
 
-		longest_list_key = max(objects, key=lambda k: len(objects[k]))
-		longest_list = objects[longest_list_key]
-
-		# Get the middle value of the longest list
-		middle_index = len(longest_list) // 2
-		middle_value = longest_list[middle_index]
-
-		print(objects,"   \n ",middle_value)
-		for i in range(len(front_ranges)//2):
-			if front_ranges[len(front_ranges)//2 - i] >  Threshold*3:
-				inf_count_left += 1
-			if front_ranges[len(front_ranges)//2 + i] >  Threshold*3:
-				inf_count_right += 1
-		
-		
-
-
-
-		# print(len(front_ranges)//2)
-		for i in range(len(front_ranges)//2):
-			if front_ranges[len(front_ranges)//2 - i] >  Threshold*3:
-				upper_angle = -i
-			elif front_ranges[len(front_ranges)//2 + i] >  Threshold*3:
-				upper_angle = i
-		
-		# 	if i < Threshold*2:
-		# 		left_under_threshold += 1
-		# for i in side_ranges_right:
-		# 	if i < Threshold*2:
-		# 		right_under_threshold += 1
+		for i in side_ranges_left:
+			if i < Threshold*3:
+				left_under_threshold += 1
+		for i in side_ranges_right:
+			if i < Threshold*3:
+				right_under_threshold += 1
 
 		# print("this is left and right under threshold ",left_under_threshold, right_under_threshold)
 		
@@ -474,7 +447,7 @@ class LineFollower(Node):
 			right_end = max([index for index, value in enumerate(list_180) if value < default_angle])
 
 		middle_angle = (left_end + right_end)/2
-		# print("this is middle ",middle_angle)
+		
 
 		if min(front_ranges)< Threshold and self.ramp_detected is False:
 			self.obstacle_detected = True
