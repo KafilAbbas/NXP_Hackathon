@@ -38,7 +38,7 @@ BLUE_COLOR = (255, 0, 0)
 GREEN_COLOR = (0, 255, 0)
 
 VECTOR_IMAGE_HEIGHT_PERCENTAGE = 0.32 # Bottom portion of image to be analyzed for vectors.
-VECTOR_MAGNITUDE_MINIMUM = 2.5
+VECTOR_MAGNITUDE_MINIMUM = 5.0
 
 
 class EdgeVectorsPublisher(Node):
@@ -163,7 +163,7 @@ class EdgeVectorsPublisher(Node):
 				vectors.append([list(min_y_coord), list(max_y_coord)])
 				vectors[-1].append(distance)
 
-			cv2.line(image, min_y_coord, max_y_coord, BLUE_COLOR, 2)
+			# cv2.line(image, min_y_coord, max_y_coord, BLUE_COLOR, 2)
 
 		return vectors, image
 
