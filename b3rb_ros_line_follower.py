@@ -62,8 +62,11 @@ right_under_threshold = 0
 upper_angle = 0
 objects = {}
 dir = 0.01
+turn = 0.0
+universal_min = 0.0
 
-turn_global = 0.0
+
+
 
 def find_list_with_value(objects, target_value,obstacle_status,min_length):
 	if obstacle_status == "Front":
@@ -119,6 +122,9 @@ def turn_change(change,angle,angle_max,dir):
 			if angle - dir <= angle_max:
 				angle = angle + dir
 		return angle
+
+
+
 
 def speed_change(change,speed,speed_max,acc_val):
 		if change == "acc":
@@ -257,11 +263,41 @@ class LineFollower(Node):
 	
 			
 		
-		
+	def set_turn(self,turn_vector, turn_ramp ,turn_obstacle):
+		global middle_angle,default_angle
+		if self.ramp_detected == True:
+			print("in ramp ", self.ramp_status," ",turn_ramp)
+			return turn_ramp
+		elif self.obstacle_detected == False:
+			# print("no obstacle ",turn_vector)
+			return turn_vector
+		else:
+			
+			change = "Front"
+			dir = 0.02
+			if middle_angle > default_angle:
+				change = "Left"
+			elif middle_angle < default_angle:
+				change = "Right"
+			
+			if universal_min > 0.55:
+				if turn_vector < turn_obstacle:
+					turn_obstacle = turn_change(change,turn_vector,turn_obstacle,dir)
+				else:
+					turn_obstacle = turn_change(change,turn_obstacle,turn_vector,dir)
+
+				print("obstacle",turn_obstacle ,universal_min)
+			else:
+				print("very_close obstacle",turn_obstacle ,universal_min)
+				turn_obstacle = turn_obstacle*1.5
+
+			return turn_obstacle
 	def edge_vectors_callback(self, message):
-		global turn_global,dir,objects,upper_angle,single_vector,dist,speed, left_min,right_min,right_min_index,left_min_index,middle_angle,Threshold_safe,Threshold_Danger,left_under_threshold,right_under_threshold
+		global turn,dir,objects,upper_angle,single_vector,dist,speed, left_min,right_min,right_min_index,left_min_index,middle_angle,Threshold_safe,Threshold_Danger,left_under_threshold,right_under_threshold
 		
-		turn = TURN_MIN
+		turn_vector = TURN_MIN
+		turn_ramp = TURN_MIN
+		turn_obstacle = TURN_MIN
 		vectors = message
 		half_width = vectors.image_width / 2
 		lower_image_height = int(vectors.image_height * VECTOR_IMAGE_HEIGHT_PERCENTAGE)
@@ -289,27 +325,28 @@ class LineFollower(Node):
 			speed = speed_change("acc",speed,SPEED_75_PERCENT,0.004)
 			
 			deviation = half_width - middle_x[0]
-			change = "Front"
-			if self.obstacle_status == "Right":
-				change = "Left"
-			elif self.obstacle_status == "Left":
-				change = "Right"
+
+			# change = "Front"
+			# if self.obstacle_status == "Right":
+			# 	change = "Left"
+			# elif self.obstacle_status == "Left":
+			# 	change = "Right"
 			
-			if self.obstacle_detected is True:
-				if self.obstacle_status == "Front" and (left_min < 0.5 and right_min < 0.5):
-					turn_global = (deviation / half_width) * 0.0
-				else:
-					# turn_global = (deviation / half_width) * 7/2
-					turn_global = turn_change(change,turn_global,(deviation / half_width) * 7/2,dir)
-			else:
-				turn_global = (deviation / half_width) * 7/2
+			# if self.obstacle_detected is True:
+			# 	if self.obstacle_status == "Front" and (left_min < 0.5 and right_min < 0.5):
+			# 		turn_vector = (deviation / half_width) * 0.0
+			# 	else:
+			# 		# turn_vector = (deviation / half_width) * 7/2
+			# 		turn_vector = turn_change(change,turn_vector,(deviation / half_width) * 7/2,dir)
+			# else:
+			# 	turn_vector = (deviation / half_width) * 7/2
 
 			
 
-			# turn_global = (deviation / half_width) * 7/2
+			turn_vector = (deviation / half_width) * 7/2
 			
-			if abs(turn_global) > TURN_MAX:
-				turn_global = (turn_global/abs(turn_global)) * TURN_MAX
+			if abs(turn_vector) > TURN_MAX:
+				turn_vector = (turn_vector/abs(turn_vector)) * TURN_MAX
 
 		if (vectors.vector_count == 2):  # straight.
 			# Calculate the middle point of the x-components of the vectors.
@@ -342,16 +379,16 @@ class LineFollower(Node):
 					direction = "L"
 				middle_x  = calc_middle_x(vectors.vector_1[1],vectors.vector_1[0],half_width+angle_const,direction)
 				deviation = half_width - middle_x[0]
-				turn_global = deviation / half_width
+				turn_vector = deviation / half_width
 				
-				if self.obstacle_detected is True:
-					if self.obstacle_status == "Front" and (left_min < 0.5 and right_min < 0.5):
-						turn_global = (deviation / half_width) * 0.0
-					else:
-						# turn_global = (deviation / half_width)
-						turn_global = turn_change(change,turn_global,(deviation / half_width),dir)
-				else:
-					turn_global = (deviation / half_width)
+				# if self.obstacle_detected is True:
+				# 	if self.obstacle_status == "Front" and (left_min < 0.5 and right_min < 0.5):
+				# 		turn_vector = (deviation / half_width) * 0.0
+				# 	else:
+				# 		# turn_vector = (deviation / half_width)
+				# 		turn_vector = turn_change(change,turn_vector,(deviation / half_width),dir)
+				# else:
+				# 	turn_vector = (deviation / half_width)
 					
 
 
@@ -364,20 +401,20 @@ class LineFollower(Node):
 					direction = "L"
 				middle_x  = calc_middle_x(vectors.vector_2[1],vectors.vector_2[0],half_width +angle_const,direction)
 				deviation = half_width - middle_x[0]
-				# turn_global = deviation / half_width
+				turn_vector = deviation / half_width
 
-				if self.obstacle_detected is True:
-					if self.obstacle_status == "Front" and (left_min < 0.5 and right_min < 0.5):
-						turn_global = (deviation / half_width) * 0.0
-					else:
-						# turn_global = (deviation / half_width)
-						turn_global = turn_change(change,turn_global,(deviation / half_width),dir)
-				else:
-					turn_global = (deviation / half_width)
+				# if self.obstacle_detected is True:
+				# 	if self.obstacle_status == "Front" and (left_min < 0.5 and right_min < 0.5):
+				# 		turn_vector = (deviation / half_width) * 0.0
+				# 	else:
+				# 		# turn_vector = (deviation / half_width)
+				# 		turn_vector = turn_change(change,turn_vector,(deviation / half_width),dir)
+				# else:
+				# 	turn_vector = (deviation / half_width)
 				
 
-			if abs(turn_global) > TURN_MAX:
-				turn_global = (turn_global/abs(turn_global)) * TURN_MAX
+			if abs(turn_vector) > TURN_MAX:
+				turn_vector = (turn_vector/abs(turn_vector)) * TURN_MAX
 
 
 
@@ -387,8 +424,8 @@ class LineFollower(Node):
 
 		if self.ramp_detected is  True:
 			# TODO: participants need to decide action on detection of ramp/bridge.
-			speed  = 0.5
-			turn_global = turn_global * 0.05
+			speed  = 0.4
+			turn = turn * 0.05
 			
 		if self.obstacle_detected is True:
 			# TODO: participants need to decide action on detection of obstacle.
@@ -401,31 +438,36 @@ class LineFollower(Node):
 					max_len = len(objects[i])
 					max_index = i
 					angle_to_move = (objects[i][0] + objects[i][-1])/2
-			change = "Front"
-			dir = 0.02
+			# change = "Front"
+			# dir = 0.02
 
-			if middle_angle > default_angle:
-				change = "Left"
-			elif middle_angle < default_angle:
-				change = "Right"
-		
-			# turn_global = turn_change(change,turn_global,-((default_angle - middle_angle)*PI/180),dir)
+			# if middle_angle > default_angle:
+			# 	change = "Left"
+			# elif middle_angle < default_angle:
+			# 	change = "Right"
+			turn_obstacle = -((default_angle - middle_angle)*PI/180)
+			# turn_obstacle = turn_change(change,turn_obstacle,-((default_angle - middle_angle)*PI/180),dir)
 
-			if self.obstacle_detected is True:
-				if self.obstacle_status == "Front" and (left_min < 0.5 and right_min < 0.5):
-					turn_global = -((default_angle - middle_angle)*PI/180) 
-				else:
-					turn_global = turn_change(change,turn_global,-((default_angle - middle_angle)*PI/180),dir)
-			else:
-				turn_global = turn_change(change,turn_global,-((default_angle - middle_angle)*PI/180),dir)
-			print(self.obstacle_status)
+			# if self.obstacle_detected is True:
+			# 	if self.obstacle_status == "Front" and (left_min < 0.5 and right_min < 0.5):
+			# 		turn_obstacle = -((default_angle - middle_angle)*PI/180) 
+			# 	else:
+			# 		turn_obstacle = turn_change(change,turn_obstacle,-((default_angle - middle_angle)*PI/180),dir)
+			# else:
+			# 	turn_obstacle = turn_change(change,turn_obstacle,-((default_angle - middle_angle)*PI/180),dir)
+			# print(self.obstacle_status)
 
 			
-			# turn_global  = -((default_angle - middle_angle)*PI/180)
-			# turn = -((default_angle - middle_angle)*PI/180)
+			# turn_obstacle  = -((default_angle - middle_angle)*PI/180)
+			# turn_obstacle = -((default_angle - middle_angle)*PI/180)
 
 
 
+
+
+
+
+		turn = self.set_turn(turn_vector,turn_ramp,turn_obstacle)
 		self.rover_move_manual_mode(speed, turn)
 
 	""" Updates instance member with traffic status message received from /traffic_status.
@@ -449,7 +491,7 @@ class LineFollower(Node):
 	"""
 	def lidar_callback(self, message):
 		# TODO: participants need to implement logic for detection of ramps and obstacles.
-		global objects,upper_angle,left_min,right_min,right_min_index,left_min_index,middle_angle,Threshold_safe,Threshold_Danger,left_under_threshold,right_under_threshold
+		global universal_min,objects,upper_angle,left_min,right_min,right_min_index,left_min_index,middle_angle,Threshold_safe,Threshold_Danger,left_under_threshold,right_under_threshold
 		shield_vertical = 4
 		shield_horizontal = 1
 		theta = math.atan(shield_vertical / shield_horizontal)
@@ -537,12 +579,12 @@ class LineFollower(Node):
 		left_ranges = view_list[len(view_list)//2:]
 		left_min = min(left_ranges)
 		right_min = min(right_ranges)
-
+		universal_min = min(left_min,right_min)
 
 
 
 		for i in range(len(view_list)):
-			if view_list[i] > Threshold_safe:
+			if view_list[i] > Threshold_Danger:
 				inf_counter += 1
 				temp_object.append(i)
 			else:
@@ -586,7 +628,7 @@ class LineFollower(Node):
 
 			# Get the middle value of the longest list
 				middle_index = len(list_needed) // 2
-				middle_angle = list_needed[middle_index] + 10
+				middle_angle = list_needed[middle_index]
 			else:
 				middle_angle = default_angle
 	
