@@ -35,7 +35,7 @@ RIGHT_TURN = -1.0
 TURN_MIN = 0.0
 TURN_MAX = 1.0
 SPEED_MIN = 0.0
-SPEED_MAX = 1.0
+SPEED_MAX = 1.4	##
 SPEED_25_PERCENT = SPEED_MAX / 4
 SPEED_50_PERCENT = SPEED_25_PERCENT * 2
 SPEED_75_PERCENT = SPEED_25_PERCENT * 3
@@ -44,11 +44,11 @@ THRESHOLD_OBSTACLE_VERTICAL = 1.0
 THRESHOLD_OBSTACLE_HORIZONTAL = 0.25
 single_vector = 0
 Threshold_safe = 1.5	#
-Threshold_Danger = 0.6
+Threshold_Danger = 0.7	##
 VECTOR_IMAGE_HEIGHT_PERCENTAGE = 0.40 
 dist = 0
 speed = SPEED_MAX
-angle_const = 160	#
+angle_const = 180	#
 
 default_angle = 60 #
 middle_angle = default_angle
@@ -283,7 +283,7 @@ class LineFollower(Node):
 			elif middle_angle < default_angle:
 				change = "Right"
 			if self.obstacle_status == "Left":
-				if left_min > 0.1:
+				if left_min > 0.03:	##
 					if turn_vector < turn_obstacle:
 						turn_obstacle = turn_change(change,turn_vector,turn_obstacle,dir)
 					else:
@@ -291,7 +291,7 @@ class LineFollower(Node):
 				else:
 					turn_obstacle = turn_obstacle*2
 			elif self.obstacle_status == "Right":
-				if right_min > 0.1:
+				if right_min > 0.03:	##
 					if turn_vector < turn_obstacle:
 						turn_obstacle = turn_change(change,turn_vector,turn_obstacle,dir)
 					else:
@@ -643,7 +643,7 @@ class LineFollower(Node):
 		for i in side_ranges_right:
 			if i < Threshold_safe:
 				right_under_threshold += 1
-		if min(ranges[75:-75])< 2.0 and self.ramp_detected is False:
+		if min(ranges[75:-75])< 1.8 and self.ramp_detected is False:	##
 			self.obstacle_detected = True
 			self.obstacle_status = "Front"
 		elif left_min < Threshold_safe and right_under_threshold < left_under_threshold and self.ramp_detected is False:
