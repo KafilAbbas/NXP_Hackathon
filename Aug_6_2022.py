@@ -48,7 +48,7 @@ Threshold_Danger = 0.65	##
 VECTOR_IMAGE_HEIGHT_PERCENTAGE = 0.40 
 dist = 0
 speed = SPEED_MAX
-angle_const = 180	#
+angle_const = 170	#
 
 default_angle = 80 #
 middle_angle = default_angle
@@ -65,7 +65,7 @@ dir = 0.01
 turn = 0.0
 universal_min = 0.0
 front_min = 0.0
-timepass_state = "Front_Left"
+
 
 
 def find_list_with_value(objects, target_value,obstacle_status,min_length):
@@ -115,13 +115,24 @@ def find_list_with_value(objects, target_value,obstacle_status,min_length):
 		return closest_list
 	
 def turn_change(change,angle,angle_max,dir):
+
 		dir = abs(angle_max-angle)/2
+		# dir  = dir * 3/2
+
 		if change == "Right":
-			if angle + dir >= angle_max:
-				angle = angle - dir
+			angle = angle - dir
+			# if angle < angle_max:
+			# 	angle = angle_max
+
+
 		elif change == "Left":
-			if angle - dir <= angle_max:
-				angle = angle + dir
+			angle = angle + dir
+			# if angle > angle_max:
+			# 	angle = angle_max
+
+
+			# if angle - dir <= angle_max:
+			# 	angle = angle + dir
 		return angle
 
 
@@ -265,7 +276,7 @@ class LineFollower(Node):
 			
 		
 	def set_turn(self,turn_vector, turn_ramp ,turn_obstacle):
-		global timepass_state,middle_angle,default_angle ,left_min,right_min,front_min,turn,left_min_index,right_min_index
+		global middle_angle,default_angle ,left_min,right_min,front_min,turn,left_min_index,right_min_index
 
 
 		# print(turn_vector, turn_obstacle, self.obstacle_status)
@@ -285,52 +296,44 @@ class LineFollower(Node):
 			if self.obstacle_status == "Left":
 				
 				if left_min > 0.03:	##
+					# print("Left")
+					# turn_obstacle = turn_change(change,turn_vector,turn_obstacle,dir)
 					if turn_vector < turn_obstacle:
 						turn_obstacle = turn_change(change,turn_vector,turn_obstacle,dir)
 					else:
 						turn_obstacle = turn_change(change,turn_obstacle,turn_vector,dir)
 				else:
+					# print("Left very close")
 					turn_obstacle = turn_obstacle*2
 			elif self.obstacle_status == "Right":
 				if right_min > 0.03:	##
+					# print("Right")
+					# turn_obstacle = turn_change(change,turn_vector,turn_obstacle,dir)
 					if turn_vector < turn_obstacle:
 						turn_obstacle = turn_change(change,turn_vector,turn_obstacle,dir)
 					else:
 						turn_obstacle = turn_change(change,turn_obstacle,turn_vector,dir)
 				else:
+					# print("Right very close")
 					turn_obstacle = turn_obstacle*2
 
 			elif self.obstacle_status == "Front":
+				
 				if front_min > 0.6 and front_min < 1.1:	#
-					# turn_obstacle = turn_change(change,turn_vector,turn_obstacle,dir)
+					
+					turn_obstacle = turn_change(change,turn_vector,turn_obstacle,dir)
+					print("checking for 1 ", turn_vector,turn_obstacle)
 					if turn_vector > turn_obstacle:
-						print("TMKC1",timepass_state,turn_obstacle,turn_vector)
-						if (timepass_state == "Front_Left" and turn_vector > 0) or (timepass_state == "Front_Right" and turn_vector < 0): 
-							turn_obstacle = turn_obstacle*2
-						else:
-							if change == "Front":
-								if timepass_state == "Front_Right":
-									change = "Left"
-								elif timepass_state == "Front_Left":
-									change = "Right"
-							turn_obstacle = turn_change(change,turn_obstacle,turn_vector,dir)
-							turn_obstacle = turn_change(change,turn_obstacle,turn_vector,dir)
-							print(turn_obstacle)
-						# print(turn_obstacle)
+						turn_obstacle = turn_change(change,turn_obstacle,turn_vector,dir)
+						
+						turn_obstacle = turn_change(change,turn_obstacle,turn_vector,dir)
 					else:
-						print("TMKC2",timepass_state,turn_obstacle,turn_vector)
-						if (timepass_state == "Front_Left" and turn_vector > 0) or (timepass_state == "Front_Right" and turn_vector < 0): 
-							turn_obstacle = turn_obstacle*2
-						else:
-							if change == "Front":
-								if timepass_state == "Front_Right":
-									change = "Left"
-								elif timepass_state == "Front_Left":
-									change = "Right"
-							turn_obstacle = turn_change(change,turn_obstacle,turn_vector,dir)
-							turn_obstacle = turn_change(change,turn_obstacle,turn_vector,dir)
-							print(turn_obstacle)
+						turn_obstacle = turn_change(change,turn_vector,turn_obstacle,dir)
+						turn_obstacle = turn_change(change,turn_vector,turn_obstacle,dir)
+					print("Front between 0.6 and 1.1 ", turn_obstacle)
+					print("\n\n")
 				elif front_min > 1.1:
+					
 					turn_obstacle = turn_change(change,turn_vector,turn_obstacle,dir)
 					if turn_vector > turn_obstacle:
 						turn_obstacle = turn_change(change,turn_obstacle,turn_vector,dir)
@@ -338,8 +341,11 @@ class LineFollower(Node):
 					else:
 						turn_obstacle = turn_change(change,turn_vector,turn_obstacle,dir)
 						turn_obstacle = turn_change(change,turn_vector,turn_obstacle,dir)
+					# print("Front greater 1.1 " , turn_obstacle)
 				else:
+					
 					turn_obstacle = turn_obstacle*2
+					# print("Front very close", turn_obstacle)
 
 			
 
@@ -546,7 +552,7 @@ class LineFollower(Node):
 	"""
 	def lidar_callback(self, message):
 		# TODO: participants need to implement logic for detection of ramps and obstacles.
-		global timepass_state,front_min, universal_min,objects,upper_angle,left_min,right_min,right_min_index,left_min_index,middle_angle,Threshold_safe,Threshold_Danger,left_under_threshold,right_under_threshold
+		global front_min, universal_min,objects,upper_angle,left_min,right_min,right_min_index,left_min_index,middle_angle,Threshold_safe,Threshold_Danger,left_under_threshold,right_under_threshold
 		shield_vertical = 4
 		shield_horizontal = 1
 		theta = math.atan(shield_vertical / shield_horizontal)
@@ -635,7 +641,6 @@ class LineFollower(Node):
 		right_min = min(right_ranges)
 		front_min = min(front_ranges)
 
-
 		side_ranges_left.reverse()
 		left_min_index = left_ranges.index(left_min)
 		right_min_index = right_ranges.index(right_min)
@@ -667,48 +672,18 @@ class LineFollower(Node):
 		for i in side_ranges_right:
 			if i < Threshold_safe:
 				right_under_threshold += 1
-
-		if min(ranges[75:-75])< 1.0 and self.ramp_detected is False:
-			front_right_ranges = front_ranges[:len(front_ranges)//2]
-			front_left_ranges = front_ranges[len(front_ranges)//2:]
-			front_left_under_threshold = 0
-			front_right_under_threshold = 0
-			for i in front_left_ranges:
-				if i < Threshold_safe:
-					front_left_under_threshold += 1
-			for i in front_right_ranges:
-				if i < Threshold_safe:
-					front_right_under_threshold += 1
-
-			front_min_index = front_ranges.index(front_min)
-
-			if front_right_under_threshold > front_left_under_threshold:
-				timepass_state = "Front_Right"
-			elif front_left_under_threshold > front_right_under_threshold:
-				timepass_state = "Front_Left"
-			else:
-				timepass_state = "Clear"
-
-
 		if min(ranges[75:-75])< 1.8 and self.ramp_detected is False:	##
 			self.obstacle_detected = True
 			self.obstacle_status = "Front"
-
-			
-			
-			# print(timepass_state)
 		elif left_min < Threshold_safe and right_under_threshold < left_under_threshold and self.ramp_detected is False:
 			self.obstacle_detected = True
 			self.obstacle_status = "Left"
-			timepass_state = "Clear"
 		elif right_min < Threshold_safe and left_under_threshold < right_under_threshold and self.ramp_detected is False:
 			self.obstacle_detected = True
 			self.obstacle_status = "Right"
-			timepass_state = "Clear"
 		else:
 			self.obstacle_detected = False
 			self.obstacle_status = "Clear"
-			timepass_state = "Clear"
 
 
 
