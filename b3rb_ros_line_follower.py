@@ -131,9 +131,13 @@ def speed_change(change,speed,speed_max,acc_val):
 		if change == "acc":
 			if speed + acc_val <= speed_max:
 				speed = speed + acc_val
+			else:
+				speed = speed_max
 		elif change == "dcc":
 			if speed - acc_val >= speed_max:
 				speed = speed - acc_val
+			else:
+				speed = speed_max
 		return speed
 
 def find_new_point(x1, y1, d, theta):
@@ -290,7 +294,8 @@ class LineFollower(Node):
 					else:
 						turn_obstacle = turn_change(change,turn_obstacle,turn_vector,dir)
 				else:
-					turn_obstacle = turn_obstacle*2
+					# turn_obstacle = turn_obstacle*2
+					turn_obstacle = turn_change(change,turn_obstacle,2*turn_obstacle,dir)
 			elif self.obstacle_status == "Right":
 				if right_min > 0.03:	##
 					if turn_vector < turn_obstacle:
@@ -298,7 +303,7 @@ class LineFollower(Node):
 					else:
 						turn_obstacle = turn_change(change,turn_obstacle,turn_vector,dir)
 				else:
-					turn_obstacle = turn_obstacle*2
+					turn_obstacle = turn_change(change,turn_obstacle,2*turn_obstacle,dir)
 
 			elif self.obstacle_status == "Front":
 				if front_min > 0.6 and front_min < 1.1:	#
@@ -306,7 +311,8 @@ class LineFollower(Node):
 					if turn_vector > turn_obstacle:
 						# print("TMKC1",timepass_state,turn_obstacle,turn_vector)
 						if (timepass_state == "Front_Left" and turn_vector > 0) or (timepass_state == "Front_Right" and turn_vector < 0): 
-							turn_obstacle = turn_obstacle*2
+							# turn_obstacle = turn_obstacle*2
+							turn_obstacle = turn_change(change,turn_obstacle,2*turn_obstacle,dir)
 						else:
 							if change == "Front":
 								if timepass_state == "Front_Right":
@@ -320,7 +326,7 @@ class LineFollower(Node):
 					else:
 						# print("TMKC2",timepass_state,turn_obstacle,turn_vector)
 						if (timepass_state == "Front_Left" and turn_vector > 0) or (timepass_state == "Front_Right" and turn_vector < 0): 
-							turn_obstacle = turn_obstacle*2
+							turn_obstacle = turn_change(change,turn_obstacle,2*turn_obstacle,dir)
 						else:
 							if change == "Front":
 								if timepass_state == "Front_Right":
@@ -339,7 +345,7 @@ class LineFollower(Node):
 						turn_obstacle = turn_change(change,turn_vector,turn_obstacle,dir)
 						turn_obstacle = turn_change(change,turn_vector,turn_obstacle,dir)
 				else:
-					turn_obstacle = turn_obstacle*2
+					turn_obstacle = turn_change(change,turn_obstacle,2*turn_obstacle,dir)
 
 			
 
@@ -479,15 +485,22 @@ class LineFollower(Node):
 
 		if self.ramp_detected is  True:
 			# TODO: participants need to decide action on detection of ramp/bridge.
-			speed  = 0.3
-			turn_ramp = turn_vector * 0.2
+			speed  = 0.4
+			# if self.ramp_status == "Up":
+			# 	speed = speed_change("dcc",speed,0.4,0.04)
+			if self.ramp_status == "Down":
+				# speed = speed_change("dcc",speed,0.2,0.04)
+				speed = 0.2
+
 			
+			turn_ramp = turn_vector * 0.1
+
 		if self.obstacle_detected is True:
 			# TODO: participants need to decide action on detection of obstacle.
 			max_index = 0
 			max_len = 0
 			angle_to_move = 0
-			speed = SPEED_25_PERCENT * 1.3
+			speed = SPEED_25_PERCENT * 1.5
 			for i in list(objects.keys()):
 				if max_len < len(objects[i]):
 					max_len = len(objects[i])
@@ -523,7 +536,7 @@ class LineFollower(Node):
 
 
 
-		print(turn_vector*180/PI)
+		print(speed)
 		turn = self.set_turn(turn_vector,turn_ramp,turn_obstacle)
 		self.rover_move_manual_mode(speed, turn)
 
@@ -577,7 +590,7 @@ class LineFollower(Node):
 		for i in range(len(front_ranges)):
 			
 			if front_ranges[i] != float('inf') :
-				if self.ramp_status == "Plain" and front_ranges[i] <= 1.0:
+				if self.ramp_status == "Plain" and front_ranges[i] <= 2.0:
 					count = count + 1
 					# pass
 				elif self.ramp_status == "Up":
@@ -606,6 +619,8 @@ class LineFollower(Node):
 		if count >=  ( len(front_ranges)*0.4 ) and self.ramp_status  == "On":
 			# on_ramp = 1
 			self.ramp_status  = "Down"
+			# speed = 0.2
+			
 			self.ramp_detected = True
 			# ramp_up_slope = 0
 
@@ -647,7 +662,7 @@ class LineFollower(Node):
 		# universal_min = min(left_min,right_min)
 
 
-		threshold = 0.5
+		threshold = 0.43
 		for i in range(len(view_list)):
 			if i < (len(view_list)-len(front_ranges))/2:
 				temp_threshold = threshold
