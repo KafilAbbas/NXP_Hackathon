@@ -44,11 +44,11 @@ THRESHOLD_OBSTACLE_VERTICAL = 1.0
 THRESHOLD_OBSTACLE_HORIZONTAL = 0.25
 single_vector = 0
 Threshold_safe = 1.5	#
-Threshold_Danger = 0.8	##
+Threshold_Danger = 0.7	##
 VECTOR_IMAGE_HEIGHT_PERCENTAGE = 0.40 
 dist = 0
 speed = SPEED_MAX
-angle_const = 120	#
+angle_const = 160	#
 
 default_angle = 60 #
 middle_angle = default_angle
@@ -84,21 +84,6 @@ def find_list_with_value(objects, target_value,obstacle_status,min_length):
 		closest_list = valid_list[closest_list_key]
 		return closest_list
 	
-	elif obstacle_status == "Left":
-		# valid_list = {k:v for k,v in objects.items() if target_value in v and len(v) >= min_length and max(v) < target_value}
-		
-		# if valid_list:
-		# 	longest_list_key = max(valid_list,key=lambda k: len(valid_list[k]))
-		# 	longest_list = valid_list[longest_list_key]
-		# 	return longest_list
-		valid_list = {k: v for k, v in objects.items() if len(v) >= min_length and max(v) < target_value}
-		if not valid_list:
-			return None
-		mean = {k: sum(v) / len(v) for k,v in valid_list.items()}
-		closest_list_key = min(mean, key=lambda k: abs(mean[k]-target_value))
-		closest_list = valid_list[closest_list_key]
-		return closest_list
-	
 	elif obstacle_status == "Right":
 		# valid_list = {k:v for k,v in objects.items() if target_value in v and len(v) >= min_length and max(v) < target_value}
 		
@@ -106,7 +91,22 @@ def find_list_with_value(objects, target_value,obstacle_status,min_length):
 		# 	longest_list_key = max(valid_list,key=lambda k: len(valid_list[k]))
 		# 	longest_list = valid_list[longest_list_key]
 		# 	return longest_list
-		valid_list = {k: v for k, v in objects.items() if len(v) >= min_length and max(v) > target_value}
+		valid_list = {k: v for k, v in objects.items() if len(v) >= min_length and (max(v)+min(v))/2 > target_value}
+		if not valid_list:
+			return None
+		mean = {k: sum(v) / len(v) for k,v in valid_list.items()}
+		closest_list_key = min(mean, key=lambda k: abs(mean[k]-target_value))
+		closest_list = valid_list[closest_list_key]
+		return closest_list
+	
+	elif obstacle_status == "Left":
+		# valid_list = {k:v for k,v in objects.items() if target_value in v and len(v) >= min_length and max(v) < target_value}
+		
+		# if valid_list:
+		# 	longest_list_key = max(valid_list,key=lambda k: len(valid_list[k]))
+		# 	longest_list = valid_list[longest_list_key]
+		# 	return longest_list
+		valid_list = {k: v for k, v in objects.items() if len(v) >= min_length and (max(v)+min(v))/2 < target_value}
 		if not valid_list:
 			return None
 		mean = {k: sum(v) / len(v) for k,v in valid_list.items()}
@@ -523,7 +523,7 @@ class LineFollower(Node):
 
 
 
-
+		print(turn_vector*180/PI)
 		turn = self.set_turn(turn_vector,turn_ramp,turn_obstacle)
 		self.rover_move_manual_mode(speed, turn)
 
@@ -548,7 +548,7 @@ class LineFollower(Node):
 	"""
 	def lidar_callback(self, message):
 		# TODO: participants need to implement logic for detection of ramps and obstacles.
-		global timepass_state,front_min, universal_min,objects,upper_angle,left_min,right_min,right_min_index,left_min_index,middle_angle,Threshold_safe,Threshold_Danger,left_under_threshold,right_under_threshold
+		global turn_vector,timepass_state,front_min, universal_min,objects,upper_angle,left_min,right_min,right_min_index,left_min_index,middle_angle,Threshold_safe,Threshold_Danger,left_under_threshold,right_under_threshold
 		shield_vertical = 4
 		shield_horizontal = 1
 		theta = math.atan(shield_vertical / shield_horizontal)
@@ -647,9 +647,16 @@ class LineFollower(Node):
 		# universal_min = min(left_min,right_min)
 
 
-
+		threshold = 0.5
 		for i in range(len(view_list)):
-			if view_list[i] > Threshold_Danger:
+			if i < (len(view_list)-len(front_ranges))/2:
+				temp_threshold = threshold
+			elif i >= (len(view_list)-len(front_ranges))/2 and i < ((len(view_list)-len(front_ranges))/2 + len(front_ranges)): 
+				temp_threshold = Threshold_Danger
+			else:
+				temp_threshold = threshold
+
+			if view_list[i] > temp_threshold:
 				inf_counter += 1
 				temp_object.append(i)
 			else:
@@ -677,13 +684,14 @@ class LineFollower(Node):
 			front_left_ranges = front_ranges[len(front_ranges)//2:]
 			front_left_under_threshold = 0
 			front_right_under_threshold = 0
+			Threshold_safe = 1.0
 			for i in front_left_ranges:
 				if i < Threshold_safe:
 					front_left_under_threshold += 1
 			for i in front_right_ranges:
 				if i < Threshold_safe:
 					front_right_under_threshold += 1
-
+			Threshold_safe = 1.5
 			front_min_index = front_ranges.index(front_min)
 
 			if front_right_under_threshold > front_left_under_threshold:
@@ -724,6 +732,7 @@ class LineFollower(Node):
 				status = "Left" 
 
 			list_needed = find_list_with_value(objects,default_angle,status,7)
+			print(objects,"\n",list_needed,status,timepass_state)
 			if list_needed != None:
 			# longest_list_key = max(objects, key=lambda k: len(objects[k]))
 			# longest_list = objects[longest_list_key]
@@ -738,7 +747,6 @@ class LineFollower(Node):
 			middle_angle = default_angle
 		
 		
-		print(self.ramp_status,self.ramp_detected)
 		# for i in range(len(front_ranges)//2):
 		# 	if front_ranges[len(front_ranges)//2 - i] >  Threshold*3:
 		# 		inf_count_left += 1
