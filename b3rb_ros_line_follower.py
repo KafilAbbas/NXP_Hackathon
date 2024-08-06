@@ -48,9 +48,9 @@ Threshold_Danger = 0.65	##
 VECTOR_IMAGE_HEIGHT_PERCENTAGE = 0.40 
 dist = 0
 speed = SPEED_MAX
-angle_const = 180	#
+angle_const = 160	#
 
-default_angle = 80 #
+default_angle = 60 #
 middle_angle = default_angle
 
 left_min = 0
@@ -668,7 +668,8 @@ class LineFollower(Node):
 			if i < Threshold_safe:
 				right_under_threshold += 1
 
-		if min(ranges[75:-75])< 1.0 and self.ramp_detected is False:
+		if min(ranges[75:-75])< 1.8 and self.ramp_detected is False:
+			self.obstacle_detected = True
 			front_right_ranges = front_ranges[:len(front_ranges)//2]
 			front_left_ranges = front_ranges[len(front_ranges)//2:]
 			front_left_under_threshold = 0
