@@ -490,7 +490,7 @@ class LineFollower(Node):
 			# 	speed = speed_change("dcc",speed,0.4,0.04)
 			if self.ramp_status == "Down":
 				# speed = speed_change("dcc",speed,0.2,0.04)
-				speed = 0.2
+				speed = 0.3
 
 			
 			turn_ramp = turn_vector * 0.1
@@ -500,7 +500,12 @@ class LineFollower(Node):
 			max_index = 0
 			max_len = 0
 			angle_to_move = 0
-			speed = SPEED_25_PERCENT * 1.5
+			print(self.obstacle_status)
+			if self.obstacle_status == "Under_Ramp":
+				speed = speed_change("acc",speed,SPEED_MAX ,0.05)
+			else:
+				speed = speed_change("dcc",speed,SPEED_25_PERCENT * 1.7,0.04)
+			# speed = SPEED_25_PERCENT * 1.7
 			for i in list(objects.keys()):
 				if max_len < len(objects[i]):
 					max_len = len(objects[i])
@@ -535,8 +540,7 @@ class LineFollower(Node):
 
 
 
-
-		print(speed)
+		# speed = 0.0
 		turn = self.set_turn(turn_vector,turn_ramp,turn_obstacle)
 		self.rover_move_manual_mode(speed, turn)
 
@@ -631,6 +635,7 @@ class LineFollower(Node):
 			# ramp_up_slope = 0
 
 		
+
 		left_under_threshold = 0
 		right_under_threshold = 0
 		# list_180 = 
@@ -658,6 +663,9 @@ class LineFollower(Node):
 		left_min_index = left_ranges.index(left_min)
 		right_min_index = right_ranges.index(right_min)
 
+		left_under_ramp = 0
+		right_under_ramp = 0
+		front_under_ramp = 0
 
 		# universal_min = min(left_min,right_min)
 
@@ -689,9 +697,21 @@ class LineFollower(Node):
 		for i in side_ranges_left:
 			if i < Threshold_safe:
 				left_under_threshold += 1
+			if i < 0.7:
+				left_under_ramp += 1
 		for i in side_ranges_right:
 			if i < Threshold_safe:
 				right_under_threshold += 1
+			if i < 0.7:
+				right_under_ramp += 1
+		for i in front_ranges:
+			if i < 0.45:
+				front_under_ramp += 1
+
+			
+		
+
+		
 
 		if min(ranges[75:-75]) < 1.8 and self.ramp_detected is False:
 			self.obstacle_detected = True
@@ -715,9 +735,11 @@ class LineFollower(Node):
 				timepass_state = "Front_Left"
 			else:
 				timepass_state = "Clear"
+		print(left_under_ramp,len(side_ranges_left)*0.5,right_under_ramp,len(side_ranges_right)*0.5)
+		if left_under_ramp >= len(side_ranges_left)*0.5 and right_under_ramp >= len(side_ranges_right)*0.5:
+			self.obstacle_status = "Under_Ramp"
 
-
-		if min(ranges[75:-75])< 1.8 and self.ramp_detected is False:	##
+		elif min(ranges[75:-75])< 1.8 and self.ramp_detected is False:	##
 			self.obstacle_detected = True
 			self.obstacle_status = "Front"
 
@@ -747,7 +769,7 @@ class LineFollower(Node):
 				status = "Left" 
 
 			list_needed = find_list_with_value(objects,default_angle,status,7)
-			print(objects,"\n",list_needed,status,timepass_state)
+			
 			if list_needed != None:
 			# longest_list_key = max(objects, key=lambda k: len(objects[k]))
 			# longest_list = objects[longest_list_key]
