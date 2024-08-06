@@ -304,7 +304,7 @@ class LineFollower(Node):
 				if front_min > 0.6 and front_min < 1.1:	#
 					# turn_obstacle = turn_change(change,turn_vector,turn_obstacle,dir)
 					if turn_vector > turn_obstacle:
-						print("TMKC1",timepass_state,turn_obstacle,turn_vector)
+						# print("TMKC1",timepass_state,turn_obstacle,turn_vector)
 						if (timepass_state == "Front_Left" and turn_vector > 0) or (timepass_state == "Front_Right" and turn_vector < 0): 
 							turn_obstacle = turn_obstacle*2
 						else:
@@ -315,10 +315,10 @@ class LineFollower(Node):
 									change = "Right"
 							turn_obstacle = turn_change(change,turn_obstacle,turn_vector,dir)
 							turn_obstacle = turn_change(change,turn_obstacle,turn_vector,dir)
-							print(turn_obstacle)
+							# print(turn_obstacle)
 						# print(turn_obstacle)
 					else:
-						print("TMKC2",timepass_state,turn_obstacle,turn_vector)
+						# print("TMKC2",timepass_state,turn_obstacle,turn_vector)
 						if (timepass_state == "Front_Left" and turn_vector > 0) or (timepass_state == "Front_Right" and turn_vector < 0): 
 							turn_obstacle = turn_obstacle*2
 						else:
@@ -329,7 +329,7 @@ class LineFollower(Node):
 									change = "Right"
 							turn_obstacle = turn_change(change,turn_obstacle,turn_vector,dir)
 							turn_obstacle = turn_change(change,turn_obstacle,turn_vector,dir)
-							print(turn_obstacle)
+							# print(turn_obstacle)
 				elif front_min > 1.1:
 					turn_obstacle = turn_change(change,turn_vector,turn_obstacle,dir)
 					if turn_vector > turn_obstacle:
@@ -477,8 +477,8 @@ class LineFollower(Node):
 
 		if self.ramp_detected is  True:
 			# TODO: participants need to decide action on detection of ramp/bridge.
-			speed  = 0.4
-			turn = turn * 0.05
+			speed  = 0.3
+			turn_ramp = turn_vector * 0.2
 			
 		if self.obstacle_detected is True:
 			# TODO: participants need to decide action on detection of obstacle.
@@ -575,9 +575,9 @@ class LineFollower(Node):
 		for i in range(len(front_ranges)):
 			
 			if front_ranges[i] != float('inf') :
-				if self.ramp_status == "Plain" and max_val <=  2.0 and self.obstacle_detected is False:
-					# count = count + 1
-					pass
+				if self.ramp_status == "Plain" and max_val <=  1.0:
+					count = count + 1
+					# pass
 				elif self.ramp_status == "Up":
 					count = count + 1
 				elif self.ramp_status == "On" and max_val >= 1.0:
@@ -600,13 +600,13 @@ class LineFollower(Node):
 			self.ramp_status  = "On"
 			self.ramp_detected = True
 
-		if count >=  ( len(front_ranges)*0.7 ) and self.ramp_status  == "On":
+		if count >=  ( len(front_ranges)*0.4 ) and self.ramp_status  == "On":
 			# on_ramp = 1
 			self.ramp_status  = "Down"
 			self.ramp_detected = True
 			# ramp_up_slope = 0
 
-		if count <= len(front_ranges)*0.6  and self.ramp_status  == "Down":
+		elif count <= len(front_ranges)*0.27  and self.ramp_status  == "Down":
 			# on_ramp = 1
 			self.ramp_status  = "Plain"
 			self.ramp_detected = False
@@ -668,7 +668,7 @@ class LineFollower(Node):
 			if i < Threshold_safe:
 				right_under_threshold += 1
 
-		if min(ranges[75:-75])< 1.8 and self.ramp_detected is False:
+		if min(ranges[75:-75]) < 1.8 and self.ramp_detected is False:
 			self.obstacle_detected = True
 			front_right_ranges = front_ranges[:len(front_ranges)//2]
 			front_left_ranges = front_ranges[len(front_ranges)//2:]
@@ -730,7 +730,6 @@ class LineFollower(Node):
 		
 		
 
-		
 		# for i in range(len(front_ranges)//2):
 		# 	if front_ranges[len(front_ranges)//2 - i] >  Threshold*3:
 		# 		inf_count_left += 1
