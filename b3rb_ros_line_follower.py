@@ -44,11 +44,11 @@ THRESHOLD_OBSTACLE_VERTICAL = 1.0
 THRESHOLD_OBSTACLE_HORIZONTAL = 0.25
 single_vector = 0
 Threshold_safe = 1.5	#
-Threshold_Danger = 0.65	##
+Threshold_Danger = 0.8	##
 VECTOR_IMAGE_HEIGHT_PERCENTAGE = 0.40 
 dist = 0
 speed = SPEED_MAX
-angle_const = 160	#
+angle_const = 120	#
 
 default_angle = 60 #
 middle_angle = default_angle
@@ -66,7 +66,7 @@ turn = 0.0
 universal_min = 0.0
 front_min = 0.0
 timepass_state = "Front_Left"
-
+vectors_count = 0
 
 def find_list_with_value(objects, target_value,obstacle_status,min_length):
 	if obstacle_status == "Front":
@@ -346,7 +346,7 @@ class LineFollower(Node):
 
 			return turn_obstacle
 	def edge_vectors_callback(self, message):
-		global turn,dir,objects,upper_angle,single_vector,dist,speed, left_min,right_min,right_min_index,left_min_index,middle_angle,Threshold_safe,Threshold_Danger,left_under_threshold,right_under_threshold
+		global vectors_count,turn,dir,objects,upper_angle,single_vector,dist,speed, left_min,right_min,right_min_index,left_min_index,middle_angle,Threshold_safe,Threshold_Danger,left_under_threshold,right_under_threshold
 		
 		turn_vector = TURN_MIN
 		turn_ramp = TURN_MIN
@@ -358,12 +358,14 @@ class LineFollower(Node):
 		# NOTE: participants may improve algorithm for line follower.
 
 		if (vectors.vector_count == 0):  # none.
+			vectors_count = 0
 			speed = SPEED_25_PERCENT
 			single_vector = 0
 			pass
 
 		if (vectors.vector_count == 1):  # curve.
 			# Calculate the magnitude of the x-component of the vector.
+			vectors_count = 1
 			check_direction = vectors.vector_1[1].x - vectors.vector_1[0].x
 			single_vector = single_vector + 1
 			direction = ""
@@ -404,7 +406,7 @@ class LineFollower(Node):
 		if (vectors.vector_count == 2):  # straight.
 			# Calculate the middle point of the x-components of the vectors.
 			# Threshold = 1.0
-			
+			vectors_count = 2
 			length_1 = np.linalg.norm (np.array([vectors.vector_1[0].x,vectors.vector_1[0].y]) - np.array([vectors.vector_1[1].x,vectors.vector_1[1].y]))
 			length_2 = np.linalg.norm (np.array([vectors.vector_2[0].x,vectors.vector_2[0].y]) - np.array([vectors.vector_2[1].x,vectors.vector_2[1].y]))
 			bottom_point_1 = np.array([vectors.vector_1[1].x,vectors.vector_1[1].y])
@@ -575,7 +577,7 @@ class LineFollower(Node):
 		for i in range(len(front_ranges)):
 			
 			if front_ranges[i] != float('inf') :
-				if self.ramp_status == "Plain" and max_val <=  1.0:
+				if self.ramp_status == "Plain" and front_ranges[i] <= 1.0:
 					count = count + 1
 					# pass
 				elif self.ramp_status == "Up":
@@ -591,7 +593,8 @@ class LineFollower(Node):
 
 			angle += message.angle_increment
 		# process side ranges.
-		if count == len(front_ranges) and self.ramp_status == "Plain":
+		
+		if count == len(front_ranges) and self.ramp_status == "Plain" and vectors_count == 0:
 			self.ramp_status = "Up"
 			self.ramp_detected = True
 
@@ -714,7 +717,13 @@ class LineFollower(Node):
 
 
 		if len(list(objects.keys())) != 0 and self.ramp_detected is False:
-			list_needed = find_list_with_value(objects,default_angle,self.obstacle_status,7)
+			status = self.obstacle_status
+			if timepass_state == "Front_Right":
+				status = "Right"
+			elif timepass_state == "Front_Left":
+				status = "Left" 
+
+			list_needed = find_list_with_value(objects,default_angle,status,7)
 			if list_needed != None:
 			# longest_list_key = max(objects, key=lambda k: len(objects[k]))
 			# longest_list = objects[longest_list_key]
@@ -729,7 +738,7 @@ class LineFollower(Node):
 			middle_angle = default_angle
 		
 		
-
+		print(self.ramp_status,self.ramp_detected)
 		# for i in range(len(front_ranges)//2):
 		# 	if front_ranges[len(front_ranges)//2 - i] >  Threshold*3:
 		# 		inf_count_left += 1
