@@ -74,7 +74,7 @@ def extract_text_from_image(image):
 def detect_hexagon(image,contours):
     global stop_sign_counter
     hexagon_found = False  # Flag to check if hexagon is found
-    cv2.imshow("Detected Shapes", image)
+    # cv2.imshow("Detected Shapes", image)
     for cnt in contours:
         # Approximate the contour to a polygon
         approx = cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True), True)
@@ -91,7 +91,7 @@ def detect_hexagon(image,contours):
             stop_sign_counter -= 3
             if stop_sign_counter < 0:
                 stop_sign_counter = 0
-        print(stop_sign_counter)
+        # print(stop_sign_counter)
     
     # cv2.imshow("Detected Shapes", image)
     if cv2.waitKey(1) & 0xFF == ord('q'):

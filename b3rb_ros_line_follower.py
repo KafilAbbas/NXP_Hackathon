@@ -35,7 +35,7 @@ RIGHT_TURN = -1.0
 TURN_MIN = 0.0
 TURN_MAX = 1.0
 SPEED_MIN = 0.0
-SPEED_MAX = 1.4	##
+SPEED_MAX = 1.3	##
 SPEED_25_PERCENT = SPEED_MAX / 4
 SPEED_50_PERCENT = SPEED_25_PERCENT * 2
 SPEED_75_PERCENT = SPEED_25_PERCENT * 3
@@ -133,12 +133,15 @@ def speed_change(change,speed,speed_max,acc_val):
 			if speed + acc_val <= speed_max:
 				speed = speed + acc_val
 			else:
+				print("i am here 1 ",speed,speed_max)
 				speed = speed_max
+				
 		elif change == "dcc":
 			if speed - acc_val >= speed_max:
 				speed = speed - acc_val
 			else:
 				speed = speed_max
+				print("i am here 2 ")
 		return speed
 
 def find_new_point(x1, y1, d, theta):
@@ -377,7 +380,8 @@ class LineFollower(Node):
 
 		if (vectors.vector_count == 0):  # none.
 			vectors_count = 0
-			speed = speed_change("acc",speed,SPEED_50_PERCENT,0.002)
+			speed = speed_change("acc",speed,SPEED_50_PERCENT,0.005)
+			# print("this is vfectr 0",speed)
 			single_vector = 0
 			pass
 
@@ -393,10 +397,11 @@ class LineFollower(Node):
 				direction = "L"
 
 			middle_x  = calc_middle_x(vectors.vector_1[1],vectors.vector_1[0],half_width+angle_const ,direction)
+			# print(speed,speed > SPEED_75_PERCENT,"1",self.obstacle_status)
 			if speed > SPEED_75_PERCENT:
 				speed  = SPEED_50_PERCENT
-			speed = speed_change("acc",speed,SPEED_75_PERCENT,0.002)
-			
+			speed = speed_change("acc",speed,SPEED_75_PERCENT,0.005)
+			print(speed,speed > SPEED_75_PERCENT,"2")
 			deviation = half_width - middle_x[0]
 
 			# change = "Front"
@@ -520,7 +525,7 @@ class LineFollower(Node):
 			if self.obstacle_status == "Under_Ramp":
 				speed = speed_change("acc",speed,SPEED_MAX ,0.05)
 			else:
-				speed = speed_change("dcc",speed,SPEED_25_PERCENT * 2,0.04)
+				speed = speed_change("acc",speed,SPEED_25_PERCENT * 2,0.05)
 			# speed = SPEED_25_PERCENT * 1.7
 			for i in list(objects.keys()):
 				if max_len < len(objects[i]):
@@ -562,6 +567,7 @@ class LineFollower(Node):
 
 
 		# speed = 0.0
+		# print(speed)
 		turn = self.set_turn(turn_vector,turn_ramp,turn_obstacle)
 		self.rover_move_manual_mode(speed, turn)
 
