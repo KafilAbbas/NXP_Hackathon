@@ -64,9 +64,9 @@ def extract_text_from_image(image):
     # image_path = image_path
     result = reader.readtext(image)
     text_final = ""
-   
+    # Print the extracted text
     for (bbox, text, prob) in result:
-        
+        # print(f"Text: {text}")
         text_final = text.lower()
         
     return text_final
@@ -78,24 +78,26 @@ def detect_hexagon(image,contours):
     for cnt in contours:
         # Approximate the contour to a polygon
         approx = cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True), True)
-        
+        # print(len(approx))
         if len(approx) == 12:
             hexagon_found = True
             cv2.drawContours(image, [approx], -1, (0, 255, 0), 3)  # Draw in green
             x, y, w, h = cv2.boundingRect(approx)
             cv2.putText(image, "Hexagon", (x + w // 2, y + h // 2), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-           
+            # print("Vertices:", len(approx))
         if len(approx) >= 11 and len(approx)<=13:
             stop_sign_counter += 1
         else:
-            stop_sign_counter -= 3
-            if stop_sign_counter < 0:
-                stop_sign_counter = 0
-        print(stop_sign_counter)
+            stop_sign_counter = 0
     
     # cv2.imshow("Detected Shapes", image)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         cv2.destroyAllWindows()
+
+    # if hexagon_found:
+    #     print("Hexagon found in the image.")
+    # else:
+    #     print("No hexagon found in the image.")
 
 
 def crop_largest_red_area(image, contours):
@@ -161,10 +163,10 @@ class ObjectRecognizer(Node):
         if crop_largest_red_area_image is not None:
             detect_hexagon(crop_largest_red_area_image,contours)
         if stop_sign_counter >= 10:
-            traffic_status_message.stop_sign = True
-        else:
-            traffic_status_message.stop_sign = False
-        # traffic_status_message.stop_sign = False
+            print("stop detected ")
+        print(stop_sign_counter)
+            
+        traffic_status_message.stop_sign = 
         self.publisher_traffic.publish(traffic_status_message)
 
 def main(args=None):

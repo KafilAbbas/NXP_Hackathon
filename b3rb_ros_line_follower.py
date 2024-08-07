@@ -44,7 +44,7 @@ THRESHOLD_OBSTACLE_VERTICAL = 1.0
 THRESHOLD_OBSTACLE_HORIZONTAL = 0.25
 single_vector = 0
 Threshold_safe = 1.5	#
-Threshold_Danger = 0.7	##
+Threshold_Danger = 0.75	##
 VECTOR_IMAGE_HEIGHT_PERCENTAGE = 0.40 
 dist = 0
 speed = SPEED_MAX
@@ -68,6 +68,7 @@ front_min = 0.0
 timepass_state = "Front_Left"
 vectors_count = 0
 
+stop_never = 0
 def find_list_with_value(objects, target_value,obstacle_status,min_length):
 	if obstacle_status == "Front":
 		valid_list = {k:v for k,v in objects.items() if target_value in v and len(v) >= min_length}
@@ -274,10 +275,10 @@ class LineFollower(Node):
 
 		# print(turn_vector, turn_obstacle, self.obstacle_status)
 		if self.ramp_detected == True:
-
+			
 			return turn_ramp
 		elif self.obstacle_detected == False:
-
+			
 			return turn_vector
 		else:
 			change = "Front"
@@ -296,6 +297,7 @@ class LineFollower(Node):
 				else:
 					# turn_obstacle = turn_obstacle*2
 					turn_obstacle = turn_change(change,turn_obstacle,2*turn_obstacle,dir)
+				
 			elif self.obstacle_status == "Right":
 				if right_min > 0.03:	##
 					if turn_vector < turn_obstacle:
@@ -304,15 +306,16 @@ class LineFollower(Node):
 						turn_obstacle = turn_change(change,turn_obstacle,turn_vector,dir)
 				else:
 					turn_obstacle = turn_change(change,turn_obstacle,2*turn_obstacle,dir)
-
+				
 			elif self.obstacle_status == "Front":
 				if front_min > 0.6 and front_min < 1.1:	#
 					# turn_obstacle = turn_change(change,turn_vector,turn_obstacle,dir)
 					if turn_vector > turn_obstacle:
-						# print("TMKC1",timepass_state,turn_obstacle,turn_vector)
+						
 						if (timepass_state == "Front_Left" and turn_vector > 0) or (timepass_state == "Front_Right" and turn_vector < 0): 
 							# turn_obstacle = turn_obstacle*2
 							turn_obstacle = turn_change(change,turn_obstacle,2*turn_obstacle,dir)
+							
 						else:
 							if change == "Front":
 								if timepass_state == "Front_Right":
@@ -321,12 +324,13 @@ class LineFollower(Node):
 									change = "Right"
 							turn_obstacle = turn_change(change,turn_obstacle,turn_vector,dir)
 							turn_obstacle = turn_change(change,turn_obstacle,turn_vector,dir)
-							# print(turn_obstacle)
-						# print(turn_obstacle)
+							
+						
 					else:
-						# print("TMKC2",timepass_state,turn_obstacle,turn_vector)
+						
 						if (timepass_state == "Front_Left" and turn_vector > 0) or (timepass_state == "Front_Right" and turn_vector < 0): 
 							turn_obstacle = turn_change(change,turn_obstacle,2*turn_obstacle,dir)
+							
 						else:
 							if change == "Front":
 								if timepass_state == "Front_Right":
@@ -335,21 +339,29 @@ class LineFollower(Node):
 									change = "Right"
 							turn_obstacle = turn_change(change,turn_obstacle,turn_vector,dir)
 							turn_obstacle = turn_change(change,turn_obstacle,turn_vector,dir)
-							# print(turn_obstacle)
+							
+							
 				elif front_min > 1.1:
 					turn_obstacle = turn_change(change,turn_vector,turn_obstacle,dir)
 					if turn_vector > turn_obstacle:
 						turn_obstacle = turn_change(change,turn_obstacle,turn_vector,dir)
 						turn_obstacle = turn_change(change,turn_obstacle,turn_vector,dir)
+
+						
 					else:
+						
 						turn_obstacle = turn_change(change,turn_vector,turn_obstacle,dir)
 						turn_obstacle = turn_change(change,turn_vector,turn_obstacle,dir)
+						
+
 				else:
 					turn_obstacle = turn_change(change,turn_obstacle,2*turn_obstacle,dir)
+					
 
 			
 
-
+			
+			
 			return turn_obstacle
 	def edge_vectors_callback(self, message):
 		global vectors_count,turn,dir,objects,upper_angle,single_vector,dist,speed, left_min,right_min,right_min_index,left_min_index,middle_angle,Threshold_safe,Threshold_Danger,left_under_threshold,right_under_threshold
@@ -365,7 +377,7 @@ class LineFollower(Node):
 
 		if (vectors.vector_count == 0):  # none.
 			vectors_count = 0
-			speed = SPEED_25_PERCENT
+			speed = speed_change("acc",speed,SPEED_50_PERCENT,0.002)
 			single_vector = 0
 			pass
 
@@ -383,7 +395,7 @@ class LineFollower(Node):
 			middle_x  = calc_middle_x(vectors.vector_1[1],vectors.vector_1[0],half_width+angle_const ,direction)
 			if speed > SPEED_75_PERCENT:
 				speed  = SPEED_50_PERCENT
-			speed = speed_change("acc",speed,SPEED_75_PERCENT,0.004)
+			speed = speed_change("acc",speed,SPEED_75_PERCENT,0.002)
 			
 			deviation = half_width - middle_x[0]
 
@@ -479,8 +491,7 @@ class LineFollower(Node):
 
 
 
-		if (self.traffic_status.stop_sign is True):
-			speed = SPEED_MIN
+		
 			
 
 		if self.ramp_detected is  True:
@@ -492,19 +503,24 @@ class LineFollower(Node):
 				# speed = speed_change("dcc",speed,0.2,0.04)
 				speed = 0.3
 
-			
 			turn_ramp = turn_vector * 0.1
+			# if timepass_state == "Clear":
+			# 	turn_ramp = turn_vector * 0.01
+			# else:
+			# 	turn_ramp = turn_vector * 0.1
 
-		if self.obstacle_detected is True:
+			
+
+		if self.obstacle_detected is True and self.traffic_status.stop_sign is False:
 			# TODO: participants need to decide action on detection of obstacle.
 			max_index = 0
 			max_len = 0
 			angle_to_move = 0
-			print(self.obstacle_status)
+			
 			if self.obstacle_status == "Under_Ramp":
 				speed = speed_change("acc",speed,SPEED_MAX ,0.05)
 			else:
-				speed = speed_change("dcc",speed,SPEED_25_PERCENT * 1.7,0.04)
+				speed = speed_change("dcc",speed,SPEED_25_PERCENT * 2,0.04)
 			# speed = SPEED_25_PERCENT * 1.7
 			for i in list(objects.keys()):
 				if max_len < len(objects[i]):
@@ -530,11 +546,16 @@ class LineFollower(Node):
 			# 		turn_obstacle = turn_change(change,turn_obstacle,-((default_angle - middle_angle)*PI/180),dir)
 			# else:
 			# 	turn_obstacle = turn_change(change,turn_obstacle,-((default_angle - middle_angle)*PI/180),dir)
-			# print(self.obstacle_status)
-
+			
 			
 			# turn_obstacle  = -((default_angle - middle_angle)*PI/180)
 			# turn_obstacle = -((default_angle - middle_angle)*PI/180)
+
+		if (self.traffic_status.stop_sign is True):
+			if front_min < 1.1:
+				speed = speed_change("dcc",speed,SPEED_MIN,0.1)
+				turn = 0
+				
 
 
 
@@ -553,8 +574,14 @@ class LineFollower(Node):
 			None
 	"""
 	def traffic_status_callback(self, message):
-		self.traffic_status = message
-
+		global stop_never
+		if message.stop_sign is True and stop_never == 0:
+			self.traffic_status = message
+			self.traffic_status.stop_sign = message.stop_sign
+			stop_never = 1
+		
+		
+		
 	""" Analyzes LIDAR data received from /scan topic for detecting ramps/bridges & obstacles.
 
 		Args:
@@ -592,7 +619,6 @@ class LineFollower(Node):
 				if max_val < front_ranges[i]:
 					max_val = front_ranges[i]
 		for i in range(len(front_ranges)):
-			
 			if front_ranges[i] != float('inf') :
 				if self.ramp_status == "Plain" and front_ranges[i] <= 2.0:
 					count = count + 1
@@ -611,7 +637,7 @@ class LineFollower(Node):
 			angle += message.angle_increment
 		# process side ranges.
 		
-		if count == len(front_ranges) and self.ramp_status == "Plain" and vectors_count == 0:
+		if count >= len(front_ranges) and self.ramp_status == "Plain" and vectors_count == 0:
 			self.ramp_status = "Up"
 			self.ramp_detected = True
 
@@ -714,7 +740,7 @@ class LineFollower(Node):
 		
 
 		if min(ranges[75:-75]) < 1.8 and self.ramp_detected is False:
-			self.obstacle_detected = True
+			# self.obstacle_detected = True
 			front_right_ranges = front_ranges[:len(front_ranges)//2]
 			front_left_ranges = front_ranges[len(front_ranges)//2:]
 			front_left_under_threshold = 0
@@ -730,12 +756,16 @@ class LineFollower(Node):
 			front_min_index = front_ranges.index(front_min)
 
 			if front_right_under_threshold > front_left_under_threshold:
+				self.obstacle_detected = True
 				timepass_state = "Front_Right"
 			elif front_left_under_threshold > front_right_under_threshold:
+				self.obstacle_detected = True
 				timepass_state = "Front_Left"
 			else:
 				timepass_state = "Clear"
-		print(left_under_ramp,len(side_ranges_left)*0.5,right_under_ramp,len(side_ranges_right)*0.5)
+				# self.ramp_detected  = True
+			
+		
 		if left_under_ramp >= len(side_ranges_left)*0.5 and right_under_ramp >= len(side_ranges_right)*0.5:
 			self.obstacle_status = "Under_Ramp"
 
@@ -745,7 +775,7 @@ class LineFollower(Node):
 
 			
 			
-			# print(timepass_state)
+			
 		elif left_min < Threshold_safe and right_under_threshold < left_under_threshold and self.ramp_detected is False:
 			self.obstacle_detected = True
 			self.obstacle_status = "Left"
